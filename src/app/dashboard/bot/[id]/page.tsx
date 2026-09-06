@@ -96,6 +96,11 @@ export default function BotManagementPage() {
     e.preventDefault();
     if (!url) return;
 
+    let formattedUrl = url.trim();
+    if (formattedUrl && !formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
+      formattedUrl = "https://" + formattedUrl;
+    }
+
     setIsTraining(true);
     setTrainStatus("Scraping website... This may take up to a minute.");
 
@@ -103,7 +108,7 @@ export default function BotManagementPage() {
       const res = await fetch("/api/train", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ botId, websiteUrl: url }),
+        body: JSON.stringify({ botId, websiteUrl: formattedUrl }),
       });
 
       const data = await res.json();
@@ -275,11 +280,11 @@ export default function BotManagementPage() {
                 <div className="flex flex-col gap-4">
                   <form onSubmit={handleTrain} className="flex gap-2">
                     <input
-                      type="url"
-                      placeholder="https://example.com"
+                      type="text"
+                      placeholder="e.g. www.example.com"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
                     <button
                       type="submit"

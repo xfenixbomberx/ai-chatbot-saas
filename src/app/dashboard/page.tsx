@@ -122,6 +122,26 @@ export default function DashboardPage() {
     if (error) {
       alert("Error creating chatbot: " + error.message);
     } else {
+      // Auto-train the bot immediately using the website URL
+      if (formattedUrl) {
+        const newBot = await supabase
+          .from("chatbots")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("website_url", formattedUrl)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (newBot.data?.id) {
+          fetch("/api/train", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ botId: newBot.data.id, websiteUrl: formattedUrl }),
+          }).catch(console.error); // Fire and forget — bot page will show status
+        }
+      }
+
       setIsModalOpen(false);
       setBotName("");
       setWebsiteUrl("");
