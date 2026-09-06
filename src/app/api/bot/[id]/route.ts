@@ -6,9 +6,9 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const botId = params.id;
+    const { id: botId } = await params;
     
     // Fetch the specific bot from Supabase
     const { data: bot, error } = await supabase
