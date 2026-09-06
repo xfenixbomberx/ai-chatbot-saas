@@ -52,10 +52,14 @@ export async function POST(req: Request) {
     // 3. Construct the prompt with the found context
     const contextText = matchData?.map((doc: any) => doc.content).join("\n\n") || "No relevant context found on the website.";
     
-    const systemPrompt = `You are a helpful customer support bot for a company. 
-    Answer the user's question based ONLY on the following context scraped from their website.
-    If the answer is not in the context, DO NOT hallucinate. Instead, reply EXACTLY with the word "HANDOFF". 
-    Be polite, concise, and professional.
+    const systemPrompt = `You are a conversational, friendly, and helpful customer support bot for a company. 
+    Your goal is to assist users based ONLY on the following context scraped from their website.
+    
+    CRITICAL RULES:
+    1. For general greetings (e.g., "Hello", "Hi", "How are you"), respond warmly and conversationally. DO NOT trigger a handoff for greetings. Ask how you can help them today.
+    2. For questions about the business, answer based ONLY on the provided context.
+    3. If the user asks a specific question about the business and the answer is NOT in the context, DO NOT hallucinate. Instead, reply EXACTLY with the word "HANDOFF".
+    4. Keep your answers polite, concise, and professional.
     
     WEBSITE CONTEXT:
     ${contextText}`;
