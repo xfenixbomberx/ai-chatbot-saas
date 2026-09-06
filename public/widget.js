@@ -164,6 +164,15 @@
   const messagesDiv = document.getElementById('chatbot-widget-messages');
 
   let isOpen = false;
+  let hasAskedForEmail = false;
+  let hasProvidedEmail = false;
+
+  // Session ID generation
+  let sessionId = localStorage.getItem('cb_session_id');
+  if (!sessionId) {
+    sessionId = 'sess_' + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('cb_session_id', sessionId);
+  }
 
   btn.addEventListener('click', () => {
     isOpen = !isOpen;
@@ -191,6 +200,23 @@
     addMessage(text, 'user');
     input.value = '';
 
+    // Handle Lead Capture (Email)
+    if (hasAskedForEmail && !hasProvidedEmail && text.includes('@')) {
+      hasProvidedEmail = true;
+      addMessage('Thanks! We will keep you updated.', 'bot');
+      try {
+        await fetch(`${BASE_URL}/api/lead`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ botId: botId, email: text })
+        });
+      } catch(e) {}
+      return;
+    } else if (hasAskedForEmail && !hasProvidedEmail) {
+      addMessage('That doesn\'t look like a valid email, but I will continue answering your questions!', 'bot');
+      hasProvidedEmail = true; // Give up asking
+    }
+
     const loadingMsg = document.createElement('div');
     loadingMsg.className = 'cb-msg bot';
     loadingMsg.textContent = 'Thinking...';
@@ -201,12 +227,20 @@
       const res = await fetch(`${BASE_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ botId: botId, message: text })
+        body: JSON.stringify({ botId: botId, message: text, sessionId: sessionId })
       });
       const data = await res.json();
       
       messagesDiv.removeChild(loadingMsg);
       addMessage(data.answer || data.error, 'bot');
+
+      // Lead capture trigger after first question
+      if (!hasAskedForEmail) {
+        setTimeout(() => {
+          addMessage('Just in case we get disconnected, what is your email address?', 'bot');
+          hasAskedForEmail = true;
+        }, 3000);
+      }
     } catch (err) {
       messagesDiv.removeChild(loadingMsg);
       addMessage('Sorry, the server is currently unavailable.', 'bot');

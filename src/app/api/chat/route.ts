@@ -19,7 +19,14 @@ export async function OPTIONS() {
 
 export async function POST(req: Request) {
   try {
-    const { botId, message } = await req.json();
+    const { botId, message, sessionId } = await req.json();
+
+    // Log the user message asynchronously
+    if (sessionId) {
+      supabase.from("chat_messages").insert([
+        { session_id: sessionId, role: "user", content: message }
+      ]).then();
+    }
 
     // 1. Convert user's message to a vector
     const embeddingResponse = await ai.models.embedContent({
@@ -47,7 +54,7 @@ export async function POST(req: Request) {
     
     const systemPrompt = `You are a helpful customer support bot for a company. 
     Answer the user's question based ONLY on the following context scraped from their website.
-    If the answer is not in the context, say "I don't have enough information to answer that based on the website."
+    If the answer is not in the context, DO NOT hallucinate. Instead, reply EXACTLY with the word "HANDOFF". 
     Be polite, concise, and professional.
     
     WEBSITE CONTEXT:
@@ -61,7 +68,36 @@ export async function POST(req: Request) {
       ]
     });
 
-    return NextResponse.json({ answer: response.text }, { headers: corsHeaders });
+    let botAnswer = response.text || "";
+
+    // 5. Human Handoff Logic
+    if (botAnswer.trim() === "HANDOFF") {
+      botAnswer = "I don't have enough information to answer that based on the website. I have alerted our human team and they will be in touch shortly!";
+      
+      // Trigger Resend Email Alert in the background
+      fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          from: "AI Support <onboarding@resend.dev>",
+          to: "delivered@resend.dev", // In production, route to the bot owner's email
+          subject: "Human Handoff Alert - AI Support Assistant",
+          html: `<p>Your AI assistant couldn't answer the following question:</p><blockquote>${message}</blockquote><p>Session ID: ${sessionId}</p>`
+        })
+      }).catch(console.error);
+    }
+
+    // Log the bot message asynchronously
+    if (sessionId) {
+      supabase.from("chat_messages").insert([
+        { session_id: sessionId, role: "bot", content: botAnswer }
+      ]).then();
+    }
+
+    return NextResponse.json({ answer: botAnswer }, { headers: corsHeaders });
   } catch (error: any) {
     console.error("Chat error:", error);
     return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
