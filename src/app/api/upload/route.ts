@@ -28,8 +28,8 @@ export async function POST(req: Request) {
       const PDFParser = (await import("pdf2json")).default;
       
       parsedText = await new Promise((resolve, reject) => {
-        // The '1' flag tells it to extract raw text rather than full JSON
-        const pdfParser = new PDFParser(null, 1);
+        // Use 'true' instead of 1 to satisfy TypeScript
+        const pdfParser = new PDFParser(null, true);
         
         pdfParser.on("pdfParser_dataError", (errData: any) => reject(errData.parserError));
         pdfParser.on("pdfParser_dataReady", () => {
