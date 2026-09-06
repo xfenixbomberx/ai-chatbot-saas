@@ -227,7 +227,7 @@
 
     const loadingMsg = document.createElement('div');
     loadingMsg.className = 'cb-msg bot';
-    loadingMsg.textContent = 'Thinking...';
+    loadingMsg.textContent = 'Typing...';
     messagesDiv.appendChild(loadingMsg);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 

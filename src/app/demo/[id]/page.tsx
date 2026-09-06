@@ -130,7 +130,7 @@ export default function DemoPage() {
                 </div>
                 <div className="p-4 rounded-2xl bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                  <span className="text-gray-400 text-sm">AI is thinking...</span>
+                  <span className="text-gray-400 text-sm">Typing...</span>
                 </div>
               </div>
             </div>
