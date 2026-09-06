@@ -13,6 +13,8 @@ export default function DemoPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [botConfig, setBotConfig] = useState<{name: string, primary_color: string} | null>(null);
+  const [hasAskedForEmail, setHasAskedForEmail] = useState(false);
+  const [hasProvidedEmail, setHasProvidedEmail] = useState(false);
 
   useEffect(() => {
     // Generate a unique session ID for this demo visitor so it shows up in Analytics
@@ -40,6 +42,21 @@ export default function DemoPage() {
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setIsTyping(true);
 
+    // Check if this is an email being provided
+    if (hasAskedForEmail && !hasProvidedEmail && userMsg.includes("@")) {
+      setHasProvidedEmail(true);
+      setMessages(prev => [...prev, { role: "bot", content: "Thanks! A member of our team will be in touch." }]);
+      setIsTyping(false);
+      try {
+        await fetch("/api/lead", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ botId, email: userMsg, session_id: sessionId })
+        });
+      } catch(e) {}
+      return;
+    }
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -48,7 +65,16 @@ export default function DemoPage() {
       });
       
       const data = await res.json();
-      setMessages(prev => [...prev, { role: "bot", content: data.answer || "Error getting response." }]);
+      const botReply = data.answer || "Error getting response.";
+      setMessages(prev => [...prev, { role: "bot", content: botReply }]);
+
+      // Ask for email after first real answer
+      if (!hasAskedForEmail) {
+        setTimeout(() => {
+          setMessages(prev => [...prev, { role: "bot", content: "Just in case we get disconnected, what is your email address?" }]);
+          setHasAskedForEmail(true);
+        }, 3000);
+      }
     } catch (err) {
       setMessages(prev => [...prev, { role: "bot", content: "Network error." }]);
     } finally {
