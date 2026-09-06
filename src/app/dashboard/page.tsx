@@ -79,13 +79,13 @@ export default function DashboardPage() {
     setIsFetching(false);
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (priceId: string) => {
     setIsCheckoutLoading(true);
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, email: user.email })
+        body: JSON.stringify({ userId: user.id, email: user.email, priceId })
       });
       const data = await res.json();
       if (data.url) {
@@ -144,42 +144,80 @@ export default function DashboardPage() {
   // PAYWALL UI
   if (!isSubscribed) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh] p-4">
-        <div className="bg-white p-8 md:p-12 rounded-2xl shadow-xl max-w-lg w-full text-center border border-gray-100">
-          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-8 h-8" />
-          </div>
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-4">Upgrade to Pro</h1>
-          <p className="text-gray-500 mb-8">
-            Get full access to the AI Support Assistant platform. Create custom AI agents, train them on your website, and automate your customer support 24/7.
-          </p>
-          
-          <ul className="text-left space-y-4 mb-8">
-            <li className="flex items-center text-gray-700">
-              <CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Unlimited AI Training
-            </li>
-            <li className="flex items-center text-gray-700">
-              <CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Custom Branding & Colors
-            </li>
-            <li className="flex items-center text-gray-700">
-              <CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Embed on Any Website
-            </li>
-            <li className="flex items-center text-gray-700">
-              <CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Advanced AI Analytics
-            </li>
-          </ul>
-
-          <button
-            onClick={handleCheckout}
-            disabled={isCheckoutLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105"
-          >
-            {isCheckoutLoading ? "Securely routing to Stripe..." : "Subscribe for £99/month"}
-          </button>
-          <p className="text-sm text-gray-400 mt-4 flex items-center justify-center gap-2">
-            <Lock className="w-3 h-3" /> Secure checkout powered by Stripe
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh] p-4 lg:p-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-4">Select your plan</h1>
+          <p className="text-xl text-gray-500 max-w-2xl mx-auto">
+            Get full access to the AI Support Assistant platform. Upgrade your customer support with 24/7 automated agents.
           </p>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto w-full">
+          
+          {/* Starter Plan */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
+            <div className="text-4xl font-extrabold text-gray-900 mb-6">£49<span className="text-lg text-gray-500 font-medium">/mo</span></div>
+            <ul className="text-left space-y-4 mb-8 flex-1">
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> 1 AI Chatbot</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Basic Website Scraping</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Standard Analytics</li>
+            </ul>
+            <button
+              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "price_starter")}
+              disabled={isCheckoutLoading}
+              className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 py-3 rounded-xl font-bold transition-colors"
+            >
+              Get Starter
+            </button>
+          </div>
+
+          {/* Pro Plan (Highlighted) */}
+          <div className="bg-blue-600 p-8 rounded-2xl shadow-xl border border-blue-700 flex flex-col relative transform md:-translate-y-4">
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-sm">
+              MOST POPULAR
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
+            <div className="text-4xl font-extrabold text-white mb-6">£99<span className="text-lg text-blue-200 font-medium">/mo</span></div>
+            <ul className="text-left space-y-4 mb-8 flex-1 text-white">
+              <li className="flex items-center"><CheckCircle2 className="w-5 h-5 text-cyan-300 mr-3 shrink-0" /> 3 AI Chatbots</li>
+              <li className="flex items-center"><CheckCircle2 className="w-5 h-5 text-cyan-300 mr-3 shrink-0" /> Unlimited AI Training</li>
+              <li className="flex items-center"><CheckCircle2 className="w-5 h-5 text-cyan-300 mr-3 shrink-0" /> Custom Branding & Colors</li>
+              <li className="flex items-center"><CheckCircle2 className="w-5 h-5 text-cyan-300 mr-3 shrink-0" /> PDF Document Upload</li>
+            </ul>
+            <button
+              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "price_pro")}
+              disabled={isCheckoutLoading}
+              className="w-full bg-white hover:bg-gray-50 text-blue-600 py-3 rounded-xl font-bold transition-colors shadow-sm"
+            >
+              Get Pro
+            </button>
+          </div>
+
+          {/* Enterprise Plan */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
+            <div className="text-4xl font-extrabold text-gray-900 mb-6">£299<span className="text-lg text-gray-500 font-medium">/mo</span></div>
+            <ul className="text-left space-y-4 mb-8 flex-1">
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> 10 AI Chatbots</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Remove "Powered By" Watermark</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Dedicated Account Manager</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Priority Support</li>
+            </ul>
+            <button
+              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE || "price_enterprise")}
+              disabled={isCheckoutLoading}
+              className="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-xl font-bold transition-colors"
+            >
+              Get Enterprise
+            </button>
+          </div>
+
+        </div>
+        
+        {isCheckoutLoading && (
+          <p className="mt-8 text-blue-600 font-medium animate-pulse">Securely routing to Stripe...</p>
+        )}
       </div>
     );
   }

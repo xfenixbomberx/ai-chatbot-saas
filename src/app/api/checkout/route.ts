@@ -12,10 +12,17 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function POST(req: Request) {
   try {
-    const { userId, email } = await req.json();
+    const { userId, email, priceId } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Use requested price ID, or fallback to default
+    const selectedPrice = priceId || process.env.STRIPE_PRICE_ID;
+
+    if (!selectedPrice) {
+      return NextResponse.json({ error: "Missing Stripe Price ID" }, { status: 400 });
     }
 
     // Create Stripe Checkout Session
@@ -23,7 +30,7 @@ export async function POST(req: Request) {
       payment_method_types: ["card"],
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID, // The £99/mo Price ID
+          price: selectedPrice,
           quantity: 1,
         },
       ],
