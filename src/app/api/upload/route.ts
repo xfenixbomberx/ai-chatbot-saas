@@ -30,10 +30,8 @@ export async function POST(req: Request) {
         (global as any).DOMMatrix = class DOMMatrix {};
       }
       
-      // Directly require the internal parse function to completely bypass Webpack mangling
-      const parsePdf = require("pdf-parse/lib/pdf-parse.js");
-
-      const pdfData = await parsePdf(buffer);
+      const pdf = require("pdf-parse");
+      const pdfData = await pdf(buffer);
       parsedText = pdfData.text;
     } else {
       parsedText = buffer.toString("utf-8"); // fallback for txt files
