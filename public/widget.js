@@ -117,6 +117,7 @@
       border-radius: 9999px;
       outline: none;
       font-size: 14px;
+      color: #111827;
     }
     #chatbot-widget-input:focus {
       border-color: ${botConfig.primary_color};
