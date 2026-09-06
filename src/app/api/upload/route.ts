@@ -30,15 +30,10 @@ export async function POST(req: Request) {
         (global as any).DOMMatrix = class DOMMatrix {};
       }
       
-      const rawPdfModule = require("pdf-parse");
-      
-      // Bulletproof module extraction to handle Webpack/Turbopack minification
-      let parseFunction = rawPdfModule;
-      if (typeof rawPdfModule !== "function") {
-        parseFunction = rawPdfModule.default || rawPdfModule.PDFParse || rawPdfModule;
-      }
+      // Directly require the internal parse function to completely bypass Webpack mangling
+      const parsePdf = require("pdf-parse/lib/pdf-parse.js");
 
-      const pdfData = await parseFunction(buffer);
+      const pdfData = await parsePdf(buffer);
       parsedText = pdfData.text;
     } else {
       parsedText = buffer.toString("utf-8"); // fallback for txt files
