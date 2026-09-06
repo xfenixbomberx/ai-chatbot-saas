@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     // Log the user message asynchronously
     if (sessionId) {
       supabase.from("chat_messages").insert([
-        { session_id: sessionId, role: "user", content: message }
+        { session_id: sessionId, bot_id: botId, role: "user", content: message }
       ]).then();
     }
 
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
     // Log the bot message asynchronously
     if (sessionId) {
       supabase.from("chat_messages").insert([
-        { session_id: sessionId, role: "bot", content: botAnswer }
+        { session_id: sessionId, bot_id: botId, role: "bot", content: botAnswer }
       ]).then();
     }
 
