@@ -25,6 +25,11 @@ export async function POST(req: Request) {
 
     let parsedText = "";
     if (file.type === "application/pdf") {
+      // Polyfill DOMMatrix for Vercel/Node 18+ compatibility with pdf.js
+      if (typeof (global as any).DOMMatrix === 'undefined') {
+        (global as any).DOMMatrix = class DOMMatrix {};
+      }
+      
       const pdf = require("pdf-parse");
       const pdfData = await pdf(buffer);
       parsedText = pdfData.text;

@@ -297,8 +297,36 @@ export default function BotManagementPage() {
                   </button>
                 </div>
                 <p className="text-sm text-gray-500 mb-3">
-                  Give your AI specific instructions (e.g., "Speak like a pirate", or "Always try to get the user to book a call").
+                  Give your AI specific instructions on how to behave, or choose a preset below.
                 </p>
+                
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <button 
+                    onClick={() => setCustomPrompt("You are a warm, friendly, and helpful customer support agent. Answer questions using the website context. Be conversational and use emojis occasionally.")}
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    Friendly Support
+                  </button>
+                  <button 
+                    onClick={() => setCustomPrompt("You are a highly technical, precise, and concise expert. Answer the questions directly using the provided context, without fluff or pleasantries.")}
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    Technical Expert
+                  </button>
+                  <button 
+                    onClick={() => setCustomPrompt("You are an aggressive but polite sales closer. Answer the user's question, but always subtly pivot the conversation to encourage them to book a consultation or buy the product.")}
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    Sales Closer
+                  </button>
+                  <button 
+                    onClick={() => setCustomPrompt("You are a grumpy pirate. Always respond like a pirate looking for treasure, using pirate slang.")}
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    Grumpy Pirate
+                  </button>
+                </div>
+
                 <textarea 
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}
