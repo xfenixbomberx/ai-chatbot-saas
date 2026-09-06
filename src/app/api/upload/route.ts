@@ -30,9 +30,14 @@ export async function POST(req: Request) {
         (global as any).DOMMatrix = class DOMMatrix {};
       }
       
-      const pdfParse = require("pdf-parse");
-      // In production bundlers, require() might return an object with a .default property
-      const parseFunction = pdfParse.default || pdfParse;
+      const rawPdfModule = require("pdf-parse");
+      
+      // Bulletproof module extraction to handle Webpack/Turbopack minification
+      let parseFunction = rawPdfModule;
+      if (typeof rawPdfModule !== "function") {
+        parseFunction = rawPdfModule.default || rawPdfModule.PDFParse || rawPdfModule;
+      }
+
       const pdfData = await parseFunction(buffer);
       parsedText = pdfData.text;
     } else {
