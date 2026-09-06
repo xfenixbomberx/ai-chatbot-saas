@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Plus, Bot, Globe, X, Trash2, Lock, CheckCircle2 } from "lucide-react";
+import { Plus, Bot, Globe, X, Trash2, Lock, CheckCircle2, Shield } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -144,37 +144,47 @@ export default function DashboardPage() {
   // PAYWALL UI
   if (!isSubscribed) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh] p-4 lg:p-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-4">Select your plan</h1>
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh] p-4 lg:p-8 relative overflow-hidden bg-gray-50/50">
+        
+        {/* Background Effects */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-blue-400/10 rounded-full blur-[120px]"></div>
+        </div>
+
+        <div className="text-center mb-16 relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-semibold mb-6">
+            <Shield className="w-4 h-4" /> Secure Stripe Checkout
+          </div>
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">Select your plan</h1>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto">
             Get full access to the AI Support Assistant platform. Upgrade your customer support with 24/7 automated agents.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto w-full relative z-10 items-center">
           
           {/* Starter Plan */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-200 flex flex-col transition-all duration-500 hover:-translate-y-2 hover:shadow-xl hover:border-blue-200 group">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
             <div className="text-4xl font-extrabold text-gray-900 mb-6">£49<span className="text-lg text-gray-500 font-medium">/mo</span></div>
             <ul className="text-left space-y-4 mb-8 flex-1">
-              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> 1 AI Chatbot</li>
-              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Basic Website Scraping</li>
-              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Standard Analytics</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-blue-500 mr-3 shrink-0" /> 1 AI Chatbot</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-blue-500 mr-3 shrink-0" /> Basic Website Scraping</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-blue-500 mr-3 shrink-0" /> Standard Analytics</li>
             </ul>
             <button
               onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "price_1UCk2WLuviuLNWsXWEayNFDA")}
               disabled={isCheckoutLoading}
-              className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 py-3 rounded-xl font-bold transition-colors"
+              className="w-full bg-gray-50 hover:bg-blue-50 text-gray-900 hover:text-blue-700 border border-gray-200 hover:border-blue-200 py-3.5 rounded-xl font-bold transition-all group-hover:scale-[1.02]"
             >
               Get Starter
             </button>
           </div>
 
           {/* Pro Plan (Highlighted) */}
-          <div className="bg-blue-600 p-8 rounded-2xl shadow-xl border border-blue-700 flex flex-col relative transform md:-translate-y-4">
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-sm">
+          <div className="bg-gradient-to-b from-blue-600 to-indigo-700 p-8 rounded-3xl shadow-xl border border-blue-500 flex flex-col relative transform md:-translate-y-4 transition-all duration-500 hover:-translate-y-6 hover:shadow-[0_20px_40px_rgba(37,99,235,0.4)] group">
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-cyan-400 to-blue-400 text-white px-4 py-1 rounded-full text-sm font-bold shadow-md animate-pulse">
               MOST POPULAR
             </div>
             <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
@@ -188,26 +198,26 @@ export default function DashboardPage() {
             <button
               onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "price_1UCk3aLuviuLNWsXFQApelRq")}
               disabled={isCheckoutLoading}
-              className="w-full bg-white hover:bg-gray-50 text-blue-600 py-3 rounded-xl font-bold transition-colors shadow-sm"
+              className="w-full bg-white hover:bg-gray-50 text-blue-600 py-3.5 rounded-xl font-bold transition-all shadow-sm group-hover:scale-[1.02]"
             >
               Get Pro
             </button>
           </div>
 
           {/* Enterprise Plan */}
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-200 flex flex-col transition-all duration-500 hover:-translate-y-2 hover:shadow-xl hover:border-gray-400 group">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
             <div className="text-4xl font-extrabold text-gray-900 mb-6">£299<span className="text-lg text-gray-500 font-medium">/mo</span></div>
             <ul className="text-left space-y-4 mb-8 flex-1">
-              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> 10 AI Chatbots</li>
-              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Remove "Powered By" Watermark</li>
-              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Dedicated Account Manager</li>
-              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Priority Support</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-900 mr-3 shrink-0" /> 10 AI Chatbots</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-900 mr-3 shrink-0" /> Remove "Powered By" Watermark</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-900 mr-3 shrink-0" /> Dedicated Account Manager</li>
+              <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-gray-900 mr-3 shrink-0" /> Priority Support</li>
             </ul>
             <button
               onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE || "price_1UCk4hLuviuLNWsX44ndHMEj")}
               disabled={isCheckoutLoading}
-              className="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-xl font-bold transition-colors"
+              className="w-full bg-gray-900 hover:bg-black text-white py-3.5 rounded-xl font-bold transition-all group-hover:scale-[1.02]"
             >
               Get Enterprise
             </button>
@@ -216,7 +226,7 @@ export default function DashboardPage() {
         </div>
         
         {isCheckoutLoading && (
-          <p className="mt-8 text-blue-600 font-medium animate-pulse">Securely routing to Stripe...</p>
+          <p className="mt-8 text-blue-600 font-medium animate-pulse relative z-10">Securely routing to Stripe...</p>
         )}
       </div>
     );
