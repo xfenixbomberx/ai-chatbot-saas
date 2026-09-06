@@ -8,6 +8,28 @@ export default function SettingsPage() {
   const [user, setUser] = useState<any>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBillingLoading, setIsBillingLoading] = useState(false);
+
+  const handleManageBilling = async () => {
+    setIsBillingLoading(true);
+    try {
+      const response = await fetch("/api/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, email: user.email }),
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "Failed to load billing portal.");
+      }
+    } catch (err) {
+      alert("Error loading billing portal.");
+    } finally {
+      setIsBillingLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -91,11 +113,11 @@ export default function SettingsPage() {
             </div>
             
             <button 
-              disabled
-              className="bg-gray-100 text-gray-400 px-4 py-2 rounded-lg font-medium cursor-not-allowed"
-              title="Customer portal coming soon!"
+              onClick={handleManageBilling}
+              disabled={isBillingLoading || !isSubscribed}
+              className={`${isBillingLoading || !isSubscribed ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'} px-4 py-2 rounded-lg font-medium transition-colors`}
             >
-              Manage Billing
+              {isBillingLoading ? "Loading..." : "Manage Billing"}
             </button>
           </div>
         </div>
