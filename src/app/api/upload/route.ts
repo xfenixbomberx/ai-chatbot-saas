@@ -25,18 +25,19 @@ export async function POST(req: Request) {
 
     let parsedText = "";
     if (file.type === "application/pdf") {
-      // Polyfill DOMMatrix for Vercel/Node 18+ compatibility with pdf.js
-      if (typeof (global as any).DOMMatrix === 'undefined') {
-        (global as any).DOMMatrix = class DOMMatrix {};
-      }
+      const PDFParser = (await import("pdf2json")).default;
       
-      // Use eval('require') to completely hide the import from Webpack/Turbopack.
-      // Since pdf-parse is in serverExternalPackages, it exists in node_modules on Vercel.
-      const nodeRequire = eval('require');
-      const pdf = nodeRequire("pdf-parse");
-      
-      const pdfData = await pdf(buffer);
-      parsedText = pdfData.text;
+      parsedText = await new Promise((resolve, reject) => {
+        // The '1' flag tells it to extract raw text rather than full JSON
+        const pdfParser = new PDFParser(null, 1);
+        
+        pdfParser.on("pdfParser_dataError", (errData: any) => reject(errData.parserError));
+        pdfParser.on("pdfParser_dataReady", () => {
+          resolve(pdfParser.getRawTextContent());
+        });
+        
+        pdfParser.parseBuffer(buffer);
+      });
     } else {
       parsedText = buffer.toString("utf-8"); // fallback for txt files
     }
