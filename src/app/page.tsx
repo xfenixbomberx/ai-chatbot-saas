@@ -79,12 +79,22 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12 text-center border-t border-gray-800">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Bot className="w-6 h-6 text-blue-500" />
-          <span className="text-lg font-bold text-white tracking-tight">AI Support Assistant</span>
+      <footer className="bg-gray-900 text-gray-400 py-12 border-t border-gray-800">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex flex-col items-center md:items-start">
+            <div className="flex items-center gap-2 mb-2">
+              <Bot className="w-6 h-6 text-blue-500" />
+              <span className="text-lg font-bold text-white tracking-tight">AI Support Assistant</span>
+            </div>
+            <p className="text-sm">© {new Date().getFullYear()} AI Support Assistant. All rights reserved.</p>
+          </div>
+          
+          <div className="flex gap-6 text-sm">
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <a href="mailto:support@chatbotconfig.uk" className="hover:text-white transition-colors">Contact Support</a>
+          </div>
         </div>
-        <p>© {new Date().getFullYear()} AI Support Assistant. All rights reserved.</p>
       </footer>
     </div>
   );
