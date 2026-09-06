@@ -94,7 +94,7 @@ export async function POST(req: Request) {
         },
         body: JSON.stringify({
           from: "AI Support <onboarding@resend.dev>",
-          to: "delivered@resend.dev", // In production, route to the bot owner's email
+          to: "jordanpotter41@gmail.com",
           subject: "Human Handoff Alert - AI Support Assistant",
           html: `<p>Your AI assistant couldn't answer the following question:</p><blockquote>${message}</blockquote><p>Session ID: ${sessionId}</p>`
         })

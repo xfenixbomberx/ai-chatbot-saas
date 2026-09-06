@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         from: "AI Support Form <onboarding@resend.dev>",
-        to: "delivered@resend.dev", // In production, change this to your actual email
+        to: "jordanpotter41@gmail.com",
         reply_to: replyTo,
         subject: `New ${category} Request from Dashboard`,
         html: `<p><strong>Category:</strong> ${category}</p>
