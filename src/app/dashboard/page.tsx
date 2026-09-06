@@ -105,10 +105,15 @@ export default function DashboardPage() {
     if (!user) return;
     setIsLoading(true);
 
+    let formattedUrl = websiteUrl.trim();
+    if (formattedUrl && !formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
+      formattedUrl = "https://" + formattedUrl;
+    }
+
     const { data, error } = await supabase
       .from("chatbots")
       .insert([{ 
-        name: botName, website_url: websiteUrl, user_id: user.id,
+        name: botName, website_url: formattedUrl, user_id: user.id,
         primary_color: botColor, icon: botIcon
       }]);
 
@@ -318,11 +323,11 @@ export default function DashboardPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Website URL to Scrape</label>
                   <input
-                    type="url"
+                    type="text"
                     required
                     value={websiteUrl}
                     onChange={(e) => setWebsiteUrl(e.target.value)}
-                    placeholder="https://example.com"
+                    placeholder="e.g. www.chatbotconfig.uk"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
                   />
                 </div>
