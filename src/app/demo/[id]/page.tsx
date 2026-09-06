@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { Send, Bot, User, Loader2 } from "lucide-react";
 
@@ -15,6 +15,11 @@ export default function DemoPage() {
   const [botConfig, setBotConfig] = useState<{name: string, primary_color: string} | null>(null);
   const [hasAskedForEmail, setHasAskedForEmail] = useState(false);
   const [hasProvidedEmail, setHasProvidedEmail] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping]);
 
   useEffect(() => {
     // Generate a unique session ID for this demo visitor so it shows up in Analytics
@@ -135,6 +140,7 @@ export default function DemoPage() {
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
