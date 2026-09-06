@@ -20,6 +20,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing botId or file" }, { status: 400 });
     }
 
+    const supportedTypes = ["application/pdf", "text/plain"];
+    if (!supportedTypes.includes(file.type)) {
+      return NextResponse.json({ 
+        error: `Unsupported file type "${file.type}". Please upload a PDF or TXT file only. Images (PNG, JPG) cannot be used for AI training as they contain no readable text.` 
+      }, { status: 400 });
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
