@@ -211,7 +211,7 @@
     // Handle Lead Capture (Email)
     if (hasAskedForEmail && !hasProvidedEmail && text.includes('@')) {
       hasProvidedEmail = true;
-      addMessage('Thanks! We will keep you updated.', 'bot');
+      addMessage("Thanks, I've saved your email! Feel free to keep asking questions.", 'bot');
       try {
         await fetch(`${BASE_URL}/api/lead`, {
           method: 'POST',

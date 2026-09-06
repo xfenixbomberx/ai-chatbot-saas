@@ -45,7 +45,7 @@ export default function DemoPage() {
     // Check if this is an email being provided
     if (hasAskedForEmail && !hasProvidedEmail && userMsg.includes("@")) {
       setHasProvidedEmail(true);
-      setMessages(prev => [...prev, { role: "bot", content: "Thanks! A member of our team will be in touch." }]);
+      setMessages(prev => [...prev, { role: "bot", content: "Thanks, I've saved your email! Feel free to keep asking questions." }]);
       setIsTyping(false);
       try {
         await fetch("/api/lead", {
