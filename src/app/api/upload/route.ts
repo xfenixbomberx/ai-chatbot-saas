@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
-import pdf from "pdf-parse";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,6 +25,7 @@ export async function POST(req: Request) {
 
     let parsedText = "";
     if (file.type === "application/pdf") {
+      const pdf = require("pdf-parse");
       const pdfData = await pdf(buffer);
       parsedText = pdfData.text;
     } else {
