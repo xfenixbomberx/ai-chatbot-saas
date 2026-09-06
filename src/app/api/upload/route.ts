@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -50,32 +50,65 @@ export async function POST(req: Request) {
     console.log(`[1/3] Parsed document (${cleanText.length} characters)...`);
 
     const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 1000,
-      chunkOverlap: 200,
+      chunkSize: 1500,  // Larger chunks = fewer API calls
+      chunkOverlap: 150,
     });
     const chunks = await splitter.createDocuments([cleanText]);
 
     console.log(`[2/3] Generating Embeddings & Saving to DB (${chunks.length} chunks)...`);
+
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
     
     for (const chunk of chunks) {
-      const embeddingResponse = await ai.models.embedContent({
-        model: 'gemini-embedding-2',
-        contents: chunk.pageContent,
-        config: { outputDimensionality: 768 }
-      });
-      
-      const embedding = embeddingResponse.embeddings?.[0]?.values;
-      if (!embedding) continue;
-
-      const { error } = await supabase
-        .from("bot_documents")
-        .insert({
-          bot_id: botId,
-          content: chunk.pageContent,
-          embedding: embedding,
+      try {
+        const embeddingResponse = await ai.models.embedContent({
+          model: 'gemini-embedding-2',
+          contents: chunk.pageContent,
+          config: { outputDimensionality: 768 }
         });
         
-      if (error) console.error("Database Insert Error:", error);
+        const embedding = embeddingResponse.embeddings?.[0]?.values;
+        if (!embedding) continue;
+
+        const { error } = await supabase
+          .from("bot_documents")
+          .insert({
+            bot_id: botId,
+            content: chunk.pageContent,
+            embedding: embedding,
+          });
+          
+        if (error) console.error("Database Insert Error:", error);
+
+        // Throttle to avoid hitting Gemini API rate limits
+        await sleep(350);
+
+      } catch (chunkError: any) {
+        // If rate limited, wait longer and retry once
+        if (chunkError?.status === 429) {
+          console.warn("Rate limited — waiting 5s before retrying...");
+          await sleep(5000);
+          try {
+            const retryResponse = await ai.models.embedContent({
+              model: 'gemini-embedding-2',
+              contents: chunk.pageContent,
+              config: { outputDimensionality: 768 }
+            });
+            const retryEmbedding = retryResponse.embeddings?.[0]?.values;
+            if (retryEmbedding) {
+              await supabase.from("bot_documents").insert({
+                bot_id: botId,
+                content: chunk.pageContent,
+                embedding: retryEmbedding,
+              });
+            }
+          } catch (retryError) {
+            console.error("Retry also failed, skipping chunk:", retryError);
+          }
+        } else {
+          console.error("Chunk embedding error:", chunkError);
+        }
+      }
     }
 
     console.log(`[3/3] PDF Training complete!`);
