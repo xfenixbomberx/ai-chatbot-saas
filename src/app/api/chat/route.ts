@@ -25,7 +25,9 @@ export async function POST(req: Request) {
     if (sessionId) {
       supabase.from("chat_messages").insert([
         { session_id: sessionId, bot_id: botId, role: "user", content: message }
-      ]).then();
+      ]).then(({ error }) => {
+        if (error) console.error("❌ Failed to log user message:", error.message, error.details);
+      });
     }
 
     // 1. Convert user's message to a vector
@@ -105,7 +107,9 @@ export async function POST(req: Request) {
     if (sessionId) {
       supabase.from("chat_messages").insert([
         { session_id: sessionId, bot_id: botId, role: "bot", content: botAnswer }
-      ]).then();
+      ]).then(({ error }) => {
+        if (error) console.error("❌ Failed to log bot message:", error.message, error.details);
+      });
     }
 
     return NextResponse.json({ answer: botAnswer }, { headers: corsHeaders });
