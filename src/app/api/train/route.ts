@@ -48,14 +48,23 @@ export async function POST(req: Request) {
       
       $("a").each((i, link) => {
         const href = $(link).attr("href");
-        if (href && !href.includes("#") && !href.startsWith("mailto:") && !href.startsWith("tel:")) {
-          let fullUrl = "";
-          if (href.startsWith("/") && !href.startsWith("//")) {
-            fullUrl = baseUrl + href;
-          } else if (href.startsWith(baseUrl)) {
-            fullUrl = href;
+        if (href && !href.includes("#") && !href.startsWith("mailto:") && !href.startsWith("tel:") && !href.toLowerCase().endsWith(".pdf")) {
+          try {
+            // This safely handles relative links (e.g. "about" -> "https://site.com/about") 
+            // and absolute links.
+            const parsedUrl = new URL(href, baseUrl);
+            
+            // Only keep links that belong to the same root domain (ignores www. mismatches)
+            const baseHostname = new URL(baseUrl).hostname.replace(/^www\./, '');
+            if (parsedUrl.hostname.includes(baseHostname)) {
+              // Strip trailing slashes to avoid duplicates
+              let cleanUrl = parsedUrl.href;
+              if (cleanUrl.endsWith("/")) cleanUrl = cleanUrl.slice(0, -1);
+              allLinks.push(cleanUrl);
+            }
+          } catch (e) {
+            // Invalid URL format, ignore
           }
-          if (fullUrl) allLinks.push(fullUrl);
         }
       });
 
@@ -71,8 +80,8 @@ export async function POST(req: Request) {
         return bScore - aScore; // Highest score first
       });
 
-      // Keep homepage + top 4 most valuable pages
-      urlsToScrape = Array.from(new Set([websiteUrl, ...uniqueLinks])).slice(0, 5);
+      // Keep homepage + top 5 most valuable pages (6 total)
+      urlsToScrape = Array.from(new Set([websiteUrl, ...uniqueLinks])).slice(0, 6);
     } catch(e) {
       console.warn("Failed to fetch initial page for links.");
       urlsToScrape = [websiteUrl]; // Fallback to just homepage if link extraction fails
