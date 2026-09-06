@@ -20,10 +20,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing botId or file" }, { status: 400 });
     }
 
-    const supportedTypes = ["application/pdf", "text/plain"];
+    const supportedTypes = ["application/pdf", "text/plain", "image/png", "image/jpeg", "image/jpg", "image/webp"];
     if (!supportedTypes.includes(file.type)) {
       return NextResponse.json({ 
-        error: `Unsupported file type "${file.type}". Please upload a PDF or TXT file only. Images (PNG, JPG) cannot be used for AI training as they contain no readable text.` 
+        error: `Unsupported file type. Please upload a PDF, TXT, or image file (PNG, JPG, WEBP).`
       }, { status: 400 });
     }
 
@@ -31,22 +31,47 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(arrayBuffer);
 
     let parsedText = "";
+
     if (file.type === "application/pdf") {
       const PDFParser = (await import("pdf2json")).default;
-      
       parsedText = await new Promise((resolve, reject) => {
-        // Use 'true' instead of 1 to satisfy TypeScript
         const pdfParser = new PDFParser(null, true);
-        
         pdfParser.on("pdfParser_dataError", (errData: any) => reject(errData.parserError));
-        pdfParser.on("pdfParser_dataReady", () => {
-          resolve(pdfParser.getRawTextContent());
-        });
-        
+        pdfParser.on("pdfParser_dataReady", () => resolve(pdfParser.getRawTextContent()));
         pdfParser.parseBuffer(buffer);
       });
-    } else {
-      parsedText = buffer.toString("utf-8"); // fallback for txt files
+
+    } else if (file.type === "text/plain") {
+      parsedText = buffer.toString("utf-8");
+
+    } else if (["image/png", "image/jpeg", "image/jpg", "image/webp"].includes(file.type)) {
+      // Use Gemini Vision to extract all text from the image
+      console.log("[1/3] Extracting text from image using Gemini Vision...");
+      const base64Image = buffer.toString("base64");
+      const mimeType = file.type as "image/png" | "image/jpeg" | "image/webp";
+
+      const visionResponse = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: [{
+          role: "user",
+          parts: [
+            {
+              inlineData: {
+                mimeType,
+                data: base64Image,
+              }
+            },
+            {
+              text: "Please extract ALL text visible in this image. Return only the raw text content, preserving structure where possible. Do not add any commentary or explanation."
+            }
+          ]
+        }]
+      });
+
+      parsedText = visionResponse.text || "";
+      if (!parsedText.trim()) {
+        return NextResponse.json({ error: "No readable text found in the image. Please ensure the image contains visible text." }, { status: 400 });
+      }
     }
 
     const cleanText = parsedText.replace(/\s+/g, " ").trim();

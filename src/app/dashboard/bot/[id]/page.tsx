@@ -296,14 +296,14 @@ export default function BotManagementPage() {
                   </form>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">OR</span>
-                    <input type="file" accept=".pdf,.txt" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
+                    <input type="file" accept=".pdf,.txt,.png,.jpg,.jpeg,.webp" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
                     <button 
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploading}
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
                     >
                       {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileText className="w-4 h-4"/>} 
-                      Upload PDF/TXT
+                      Upload PDF, TXT or Image
                     </button>
                   </div>
                 </div>
