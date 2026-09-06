@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, MessageSquare, Zap, Shield, ArrowRight } from "lucide-react";
+import { Bot, MessageSquare, Zap, Shield, ArrowRight, ChevronDown } from "lucide-react";
 
 export default function Home() {
   return (
@@ -40,10 +40,17 @@ export default function Home() {
           </Link>
         </div>
         <p className="mt-6 text-sm text-gray-500">Starting at £49/month. Cancel anytime.</p>
+        
+        {/* Scroll Arrow */}
+        <div className="mt-20 flex justify-center animate-bounce">
+          <a href="#features" className="text-gray-400 hover:text-blue-600 transition-colors p-2" aria-label="Scroll down">
+            <ChevronDown className="w-8 h-8" />
+          </a>
+        </div>
       </main>
 
       {/* Features Section */}
-      <section className="bg-white py-24 border-t border-gray-200">
+      <section id="features" className="bg-white py-24 border-t border-gray-200 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything you need to scale your support</h2>
