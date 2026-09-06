@@ -29,8 +29,16 @@ export async function POST(req: Request) {
     let urlsToScrape = [websiteUrl];
     let allText = "";
 
+    const fetchOptions = {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+      }
+    };
+
     try {
-      const response = await fetch(websiteUrl);
+      const response = await fetch(websiteUrl, fetchOptions);
       const html = await response.text();
       const $ = cheerio.load(html);
       
@@ -65,14 +73,19 @@ export async function POST(req: Request) {
 
       // Keep homepage + top 4 most valuable pages
       urlsToScrape = Array.from(new Set([websiteUrl, ...uniqueLinks])).slice(0, 5);
+    } catch(e) {
+      console.warn("Failed to fetch initial page for links.");
+      urlsToScrape = [websiteUrl]; // Fallback to just homepage if link extraction fails
+    }
+
     console.log(`Discovered pages to scrape:`, urlsToScrape);
 
     for (const url of urlsToScrape) {
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, fetchOptions);
         const html = await response.text();
         const $ = cheerio.load(html);
-        $("script, style, noscript, nav, footer, header").remove();
+        $("script, style, noscript, nav, footer, header, iframe").remove();
         const text = $("body").text().replace(/\s+/g, " ").trim();
         if (text && text.length > 50) {
           allText += "\n\n--- Page: " + url + " ---\n\n" + text;
