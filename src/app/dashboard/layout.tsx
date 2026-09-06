@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, Settings, LayoutDashboard } from "lucide-react";
+import { Bot, Settings, LayoutDashboard, HelpCircle } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -30,6 +30,13 @@ export default function DashboardLayout({
           >
             <Settings className="w-5 h-5 mr-3 text-gray-400" />
             Settings
+          </Link>
+          <Link
+            href="/dashboard/support"
+            className="flex items-center px-3 py-2 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors font-medium"
+          >
+            <HelpCircle className="w-5 h-5 mr-3 text-gray-400" />
+            Help & Support
           </Link>
         </nav>
         <div className="p-4 pb-12 border-t border-gray-200">
