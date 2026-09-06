@@ -30,8 +30,10 @@ export async function POST(req: Request) {
         (global as any).DOMMatrix = class DOMMatrix {};
       }
       
-      const pdf = require("pdf-parse");
-      const pdfData = await pdf(buffer);
+      const pdfParse = require("pdf-parse");
+      // In production bundlers, require() might return an object with a .default property
+      const parseFunction = pdfParse.default || pdfParse;
+      const pdfData = await parseFunction(buffer);
       parsedText = pdfData.text;
     } else {
       parsedText = buffer.toString("utf-8"); // fallback for txt files
