@@ -66,14 +66,17 @@ export default function DemoPage() {
       
       const data = await res.json();
       const botReply = data.answer || "Error getting response.";
-      setMessages(prev => [...prev, { role: "bot", content: botReply }]);
-
-      // Ask for email after first real answer
+      
+      // Ask for email immediately after first bot reply
       if (!hasAskedForEmail) {
-        setTimeout(() => {
-          setMessages(prev => [...prev, { role: "bot", content: "Just in case we get disconnected, what is your email address?" }]);
-          setHasAskedForEmail(true);
-        }, 3000);
+        setHasAskedForEmail(true);
+        setMessages(prev => [
+          ...prev,
+          { role: "bot", content: botReply },
+          { role: "bot", content: "Just in case we get disconnected, what is your email address?" }
+        ]);
+      } else {
+        setMessages(prev => [...prev, { role: "bot", content: botReply }]);
       }
     } catch (err) {
       setMessages(prev => [...prev, { role: "bot", content: "Network error." }]);
