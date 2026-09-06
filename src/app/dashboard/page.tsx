@@ -164,7 +164,7 @@ export default function DashboardPage() {
               <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Standard Analytics</li>
             </ul>
             <button
-              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "price_starter")}
+              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "price_1UCk2WLuviuLNWsXWEayNFDA")}
               disabled={isCheckoutLoading}
               className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 py-3 rounded-xl font-bold transition-colors"
             >
@@ -186,7 +186,7 @@ export default function DashboardPage() {
               <li className="flex items-center"><CheckCircle2 className="w-5 h-5 text-cyan-300 mr-3 shrink-0" /> PDF Document Upload</li>
             </ul>
             <button
-              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "price_pro")}
+              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "price_1UCk3aLuviuLNWsXFQApelRq")}
               disabled={isCheckoutLoading}
               className="w-full bg-white hover:bg-gray-50 text-blue-600 py-3 rounded-xl font-bold transition-colors shadow-sm"
             >
@@ -205,7 +205,7 @@ export default function DashboardPage() {
               <li className="flex items-center text-gray-700"><CheckCircle2 className="w-5 h-5 text-green-500 mr-3 shrink-0" /> Priority Support</li>
             </ul>
             <button
-              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE || "price_enterprise")}
+              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE || "price_1UCk4hLuviuLNWsX44ndHMEj")}
               disabled={isCheckoutLoading}
               className="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-xl font-bold transition-colors"
             >
