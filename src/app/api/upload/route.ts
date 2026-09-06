@@ -30,7 +30,11 @@ export async function POST(req: Request) {
         (global as any).DOMMatrix = class DOMMatrix {};
       }
       
-      const pdf = require("pdf-parse");
+      // Use eval('require') to completely hide the import from Webpack/Turbopack.
+      // Since pdf-parse is in serverExternalPackages, it exists in node_modules on Vercel.
+      const nodeRequire = eval('require');
+      const pdf = nodeRequire("pdf-parse");
+      
       const pdfData = await pdf(buffer);
       parsedText = pdfData.text;
     } else {
