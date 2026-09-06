@@ -20,27 +20,65 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing botId or websiteUrl" }, { status: 400 });
     }
 
-    console.log(`[1/4] Scraping website: ${websiteUrl}...`);
-    // 1. Scrape the website
-    const response = await fetch(websiteUrl);
-    const html = await response.text();
-    const $ = cheerio.load(html);
+    console.log(`[1/4] Starting Deep Scrape for: ${websiteUrl}...`);
     
-    // Remove unnecessary elements to get clean text
-    $("script, style, noscript, nav, footer, header").remove();
-    const text = $("body").text().replace(/\s+/g, " ").trim();
+    // Helper to safely parse URLs
+    const getBaseUrl = (url: string) => new URL(url).origin;
+    const baseUrl = getBaseUrl(websiteUrl);
 
-    if (!text || text.length < 50) {
+    let urlsToScrape = [websiteUrl];
+    let allText = "";
+
+    try {
+      const response = await fetch(websiteUrl);
+      const html = await response.text();
+      const $ = cheerio.load(html);
+      
+      // Find internal links (e.g., /about, /pricing)
+      $("a").each((i, link) => {
+        const href = $(link).attr("href");
+        if (href) {
+          if (href.startsWith("/") && !href.startsWith("//")) {
+            urlsToScrape.push(baseUrl + href);
+          } else if (href.startsWith(baseUrl)) {
+            urlsToScrape.push(href);
+          }
+        }
+      });
+    } catch(e) {
+      console.warn("Failed to fetch initial page for links.");
+    }
+
+    // Deduplicate and limit to top 4 pages (to avoid serverless timeout)
+    urlsToScrape = Array.from(new Set(urlsToScrape)).slice(0, 4);
+    console.log(`Discovered pages to scrape:`, urlsToScrape);
+
+    for (const url of urlsToScrape) {
+      try {
+        const response = await fetch(url);
+        const html = await response.text();
+        const $ = cheerio.load(html);
+        $("script, style, noscript, nav, footer, header").remove();
+        const text = $("body").text().replace(/\s+/g, " ").trim();
+        if (text && text.length > 50) {
+          allText += "\n\n--- Page: " + url + " ---\n\n" + text;
+        }
+      } catch (e) {
+        console.warn(`Failed to scrape ${url}`);
+      }
+    }
+
+    if (!allText || allText.length < 50) {
       return NextResponse.json({ error: "Not enough readable text found on the website." }, { status: 400 });
     }
 
-    console.log(`[2/4] Chunking scraped text (${text.length} characters)...`);
+    console.log(`[2/4] Chunking scraped text (${allText.length} characters)...`);
     // 2. Chunk the text so the AI can process it piece by piece
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 1000,
       chunkOverlap: 200,
     });
-    const chunks = await splitter.createDocuments([text]);
+    const chunks = await splitter.createDocuments([allText]);
 
     console.log(`[3/4] Generating Embeddings via Gemini & Saving to DB (${chunks.length} chunks)...`);
     // 3. Generate Embeddings & Save to DB
@@ -70,7 +108,7 @@ export async function POST(req: Request) {
     }
 
     console.log(`[4/4] Training complete!`);
-    return NextResponse.json({ success: true, chunksProcessed: chunks.length });
+    return NextResponse.json({ success: true, chunksProcessed: chunks.length, pagesScraped: urlsToScrape.length });
     
   } catch (error: any) {
     console.error("Training error:", error);
