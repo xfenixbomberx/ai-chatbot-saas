@@ -120,10 +120,13 @@ export default function BotManagementPage() {
     setIsTyping(true);
 
     try {
+      // We use a constant test session ID for dashboard testing so it groups nicely in the logs
+      const testSessionId = `test-dashboard-${botId.substring(0,6)}`;
+      
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ botId, message: userMsg })
+        body: JSON.stringify({ botId, message: userMsg, sessionId: testSessionId })
       });
       const data = await res.json();
       setChatHistory(prev => [...prev, { role: 'bot', content: data.answer || "Error getting response." }]);
