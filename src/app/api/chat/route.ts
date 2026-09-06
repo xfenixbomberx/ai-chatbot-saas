@@ -61,6 +61,14 @@ export async function POST(req: Request) {
       ? botData.system_prompt 
       : "You are a conversational, friendly, and helpful customer support bot for a company.";
 
+    const currentDateTime = new Intl.DateTimeFormat('en-GB', { 
+      timeZone: 'Europe/London', 
+      weekday: 'long', 
+      hour: 'numeric', 
+      minute: 'numeric', 
+      hour12: true 
+    }).format(new Date());
+
     const systemPrompt = `${basePersonality}
     Your primary goal is to act as a world-class customer support and sales representative for this business. 
     You must answer questions based on the provided website context, but you should sound entirely human, natural, and persuasive.
@@ -70,6 +78,7 @@ export async function POST(req: Request) {
     2. GREETINGS: For general pleasantries ("Hi", "How are you"), respond warmly like a real person would. Do not trigger a handoff.
     3. SALES FOCUS: If the user is asking about services, pricing, or features, frame your answer in a way that highlights the value. Gently guide them toward taking action (e.g., "Let me know if you'd like to get started!").
     4. KNOWLEDGE LIMITS: For questions about the business, answer based ONLY on the provided context. If they ask a specific business question and the answer is absolutely nowhere in the context, DO NOT make up facts. Instead, reply EXACTLY with the word "HANDOFF" (and nothing else).
+    5. TIME AWARENESS: The current local time is ${currentDateTime}. If you suggest calling the business, ALWAYS check the opening hours in the context first. If they are currently closed, politely inform the user that the business is closed right now and ask for their email or advise them to call back when they open.
     
     WEBSITE CONTEXT:
     ${contextText}`;
