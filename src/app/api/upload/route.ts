@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       const mimeType = file.type as "image/png" | "image/jpeg" | "image/webp";
 
       const visionResponse = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-3.6-flash",
         contents: [{
           role: "user",
           parts: [
