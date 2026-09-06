@@ -39,7 +39,7 @@ export default function Home() {
             Start Building Now <ArrowRight className="w-5 h-5 ml-2" />
           </Link>
         </div>
-        <p className="mt-6 text-sm text-gray-500">Only £99/month. Cancel anytime.</p>
+        <p className="mt-6 text-sm text-gray-500">Starting at £49/month. Cancel anytime.</p>
       </main>
 
       {/* Features Section */}
