@@ -34,23 +34,37 @@ export async function POST(req: Request) {
       const html = await response.text();
       const $ = cheerio.load(html);
       
-      // Find internal links (e.g., /about, /pricing)
+      // Find internal links and prioritize valuable pages
+      const valuableKeywords = ["service", "treatment", "price", "fee", "about", "faq", "contact"];
+      const allLinks: string[] = [];
+      
       $("a").each((i, link) => {
         const href = $(link).attr("href");
-        if (href) {
+        if (href && !href.includes("#") && !href.startsWith("mailto:") && !href.startsWith("tel:")) {
+          let fullUrl = "";
           if (href.startsWith("/") && !href.startsWith("//")) {
-            urlsToScrape.push(baseUrl + href);
+            fullUrl = baseUrl + href;
           } else if (href.startsWith(baseUrl)) {
-            urlsToScrape.push(href);
+            fullUrl = href;
           }
+          if (fullUrl) allLinks.push(fullUrl);
         }
       });
-    } catch(e) {
-      console.warn("Failed to fetch initial page for links.");
-    }
 
-    // Deduplicate and limit to top 4 pages (to avoid serverless timeout)
-    urlsToScrape = Array.from(new Set(urlsToScrape)).slice(0, 4);
+      // Deduplicate
+      const uniqueLinks = Array.from(new Set(allLinks));
+      
+      // Sort links: prioritize those containing valuable keywords
+      uniqueLinks.sort((a, b) => {
+        const aLower = a.toLowerCase();
+        const bLower = b.toLowerCase();
+        const aScore = valuableKeywords.filter(kw => aLower.includes(kw)).length;
+        const bScore = valuableKeywords.filter(kw => bLower.includes(kw)).length;
+        return bScore - aScore; // Highest score first
+      });
+
+      // Keep homepage + top 4 most valuable pages
+      urlsToScrape = Array.from(new Set([websiteUrl, ...uniqueLinks])).slice(0, 5);
     console.log(`Discovered pages to scrape:`, urlsToScrape);
 
     for (const url of urlsToScrape) {
