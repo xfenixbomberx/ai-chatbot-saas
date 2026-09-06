@@ -101,7 +101,7 @@
       gap: 12px;
       background: #f9fafb;
     }
-    .cb-msg { padding: 12px 16px; border-radius: 12px; max-width: 85%; font-size: 14px; line-height: 1.5; }
+    .cb-msg { padding: 12px 16px; border-radius: 12px; max-width: 85%; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
     .cb-msg.user { background: ${botConfig.primary_color}; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
     .cb-msg.bot { background: #ffffff; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
     #chatbot-widget-form {

@@ -112,7 +112,7 @@ export default function DemoPage() {
                   {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                 </div>
 
-                <div className={`p-4 rounded-2xl text-sm leading-relaxed ${
+                <div className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                   msg.role === 'user' 
                     ? 'bg-blue-600 text-white rounded-tr-sm shadow-sm' 
                     : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm'
