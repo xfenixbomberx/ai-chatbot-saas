@@ -52,7 +52,14 @@ export async function POST(req: Request) {
     // 3. Construct the prompt with the found context
     const contextText = matchData?.map((doc: any) => doc.content).join("\n\n") || "No relevant context found on the website.";
     
-    const systemPrompt = `You are a conversational, friendly, and helpful customer support bot for a company. 
+    // Fetch custom prompt if it exists
+    const { data: botData } = await supabase.from('chatbots').select('system_prompt').eq('id', botId).single();
+    
+    const basePersonality = botData?.system_prompt 
+      ? botData.system_prompt 
+      : "You are a conversational, friendly, and helpful customer support bot for a company.";
+
+    const systemPrompt = `${basePersonality}
     Your goal is to assist users based ONLY on the following context scraped from their website.
     
     CRITICAL RULES:

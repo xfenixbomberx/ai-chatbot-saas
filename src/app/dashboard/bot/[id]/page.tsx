@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Globe, Loader2, Link2, Code, Mail, MessageSquare } from "lucide-react";
+import { ArrowLeft, Globe, Loader2, Link2, Code, Mail, MessageSquare, FileText, Download, Settings } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function BotManagementPage() {
   const params = useParams();
@@ -17,10 +18,21 @@ export default function BotManagementPage() {
   const [url, setUrl] = useState("");
   const [isTraining, setIsTraining] = useState(false);
   const [trainStatus, setTrainStatus] = useState("");
+  
+  // PDF Upload State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
+
+  // Custom Persona State
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [isSavingPrompt, setIsSavingPrompt] = useState(false);
+  const [promptStatus, setPromptStatus] = useState("");
 
   // Inbox & Leads State
   const [leads, setLeads] = useState<any[]>([]);
   const [chatSessions, setChatSessions] = useState<Record<string, any[]>>({});
+  const [chartData, setChartData] = useState<any[]>([]);
   
   // Chat Tester State
   const [testMessage, setTestMessage] = useState("");
@@ -34,14 +46,15 @@ export default function BotManagementPage() {
   const fetchData = async () => {
     // 1. Fetch Bot
     const { data: botData } = await supabase.from("chatbots").select("*").eq("id", botId).single();
-    if (botData) setBot(botData);
-
-    if (activeTab === "leads") {
-      const { data: leadsData } = await supabase.from("leads").select("*").eq("bot_id", botId).order("captured_at", { ascending: false });
-      if (leadsData) setLeads(leadsData);
+    if (botData) {
+      setBot(botData);
+      if (botData.system_prompt) setCustomPrompt(botData.system_prompt);
     }
 
-    if (activeTab === "inbox") {
+    if (activeTab === "leads" || activeTab === "inbox") {
+      const { data: leadsData } = await supabase.from("leads").select("*").eq("bot_id", botId).order("captured_at", { ascending: false });
+      if (leadsData) setLeads(leadsData);
+
       const { data: msgsData } = await supabase.from("chat_messages").select("*").eq("bot_id", botId).order("created_at", { ascending: true });
       if (msgsData) {
         // Group by session_id
@@ -51,6 +64,20 @@ export default function BotManagementPage() {
           grouped[msg.session_id].push(msg);
         });
         setChatSessions(grouped);
+        
+        // Build 7-day analytics chart data
+        const last7Days = [...Array(7)].map((_, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          return d.toISOString().split('T')[0];
+        }).reverse();
+
+        const chartAgg = last7Days.map(date => {
+          const msgsOnDate = msgsData.filter(m => m.created_at.startsWith(date)).length;
+          const leadsOnDate = (leadsData || []).filter(l => l.captured_at.startsWith(date)).length;
+          return { name: date.slice(5), Messages: msgsOnDate, Leads: leadsOnDate };
+        });
+        setChartData(chartAgg);
       }
     }
   };
@@ -107,6 +134,61 @@ export default function BotManagementPage() {
     }
   };
 
+  const handleSavePrompt = async () => {
+    setIsSavingPrompt(true);
+    setPromptStatus("");
+    const { error } = await supabase.from("chatbots").update({ system_prompt: customPrompt }).eq("id", botId);
+    if (error) {
+      setPromptStatus("Error saving persona.");
+    } else {
+      setPromptStatus("Persona saved successfully!");
+      setTimeout(() => setPromptStatus(""), 3000);
+    }
+    setIsSavingPrompt(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadStatus("Uploading and parsing document...");
+
+    const formData = new FormData();
+    formData.append("botId", botId);
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUploadStatus(`Success! Trained on ${data.chunksProcessed} chunks from document.`);
+      } else {
+        setUploadStatus(`Error: ${data.error}`);
+      }
+    } catch (err) {
+      setUploadStatus("Error uploading file.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (leads.length === 0) return;
+    const header = "Email,Date Captured\n";
+    const csv = leads.map(l => `${l.email},${new Date(l.captured_at).toISOString()}`).join("\n");
+    const blob = new Blob([header + csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leads-${botId}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   if (!bot) return <div className="p-8">Loading...</div>;
 
   return (
@@ -156,30 +238,74 @@ export default function BotManagementPage() {
                   <h2 className="text-lg font-bold">Train AI Model</h2>
                 </div>
                 <p className="text-sm text-gray-500 mb-4">
-                  Enter a website URL. Our scraper will automatically crawl the page and up to 3 internal sub-pages to build your knowledge base.
+                  Enter a website URL or upload a PDF document (like a menu or pricing sheet) to build your knowledge base.
                 </p>
-                <form onSubmit={handleTrain} className="flex gap-2">
-                  <input
-                    type="url"
-                    placeholder="https://example.com"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    required
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isTraining}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:bg-blue-400 flex items-center"
-                  >
-                    {isTraining ? <Loader2 className="w-5 h-5 animate-spin" /> : "Scrape & Train"}
-                  </button>
-                </form>
+                <div className="flex flex-col gap-4">
+                  <form onSubmit={handleTrain} className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://example.com"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isTraining}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:bg-blue-400 flex items-center"
+                    >
+                      {isTraining ? <Loader2 className="w-5 h-5 animate-spin" /> : "Scrape & Train"}
+                    </button>
+                  </form>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-400">OR</span>
+                    <input type="file" accept=".pdf,.txt" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileText className="w-4 h-4"/>} 
+                      Upload PDF/TXT
+                    </button>
+                  </div>
+                </div>
                 {trainStatus && (
                   <p className={`mt-4 text-sm font-medium ${trainStatus.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
                     {trainStatus}
                   </p>
                 )}
+                {uploadStatus && (
+                  <p className={`mt-4 text-sm font-medium ${uploadStatus.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
+                    {uploadStatus}
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-emerald-600" />
+                    <h2 className="text-lg font-bold">Custom Bot Persona</h2>
+                  </div>
+                  <button 
+                    onClick={handleSavePrompt} 
+                    disabled={isSavingPrompt}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center gap-1"
+                  >
+                    {isSavingPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Persona'}
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500 mb-3">
+                  Give your AI specific instructions (e.g., "Speak like a pirate", or "Always try to get the user to book a call").
+                </p>
+                <textarea 
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder="You are a conversational, friendly, and helpful customer support bot..."
+                  className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                {promptStatus && <p className="text-sm text-emerald-600 mt-2">{promptStatus}</p>}
               </div>
 
               <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -245,35 +371,55 @@ export default function BotManagementPage() {
           </div>
         )}
 
-        {/* TAB 2: INBOX */}
+        {/* TAB 2: INBOX & ANALYTICS */}
         {activeTab === "inbox" && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Chat Logs</h2>
-              <p className="text-sm text-gray-500">Read the conversations your customers are having with the AI.</p>
+          <div className="space-y-6">
+            {/* Analytics Chart */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-6">7-Day Activity</h2>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                    <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                    <Line type="monotone" dataKey="Messages" stroke="#3b82f6" strokeWidth={3} dot={{r: 4, strokeWidth: 2}} activeDot={{r: 6}} />
+                    <Line type="monotone" dataKey="Leads" stroke="#10b981" strokeWidth={3} dot={{r: 4, strokeWidth: 2}} activeDot={{r: 6}} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div className="p-6">
-              {Object.keys(chatSessions).length === 0 ? (
-                <p className="text-gray-500">No chat history found yet.</p>
-              ) : (
-                <div className="space-y-8">
-                  {Object.entries(chatSessions).map(([sessionId, msgs]) => (
-                    <div key={sessionId} className="border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="bg-gray-100 px-4 py-2 text-xs font-mono text-gray-500">Session: {sessionId}</div>
-                      <div className="p-4 space-y-3 bg-gray-50 max-h-[300px] overflow-y-auto">
-                        {msgs.map((msg, idx) => (
-                          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`px-4 py-2 rounded-lg text-sm max-w-[80%] ${msg.role === 'user' ? 'bg-blue-100 text-blue-900' : 'bg-white border border-gray-200'}`}>
-                              <span className="font-bold text-xs uppercase opacity-50 block mb-1">{msg.role}</span>
-                              {msg.content}
+
+            {/* Chat Logs */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-200 bg-gray-50">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Chat Logs</h2>
+                <p className="text-sm text-gray-500">Read the conversations your customers are having with the AI.</p>
+              </div>
+              <div className="p-6">
+                {Object.keys(chatSessions).length === 0 ? (
+                  <p className="text-gray-500">No chat history found yet.</p>
+                ) : (
+                  <div className="space-y-8">
+                    {Object.entries(chatSessions).map(([sessionId, msgs]) => (
+                      <div key={sessionId} className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="bg-gray-100 px-4 py-2 text-xs font-mono text-gray-500">Session: {sessionId}</div>
+                        <div className="p-4 space-y-3 bg-gray-50 max-h-[300px] overflow-y-auto">
+                          {msgs.map((msg, idx) => (
+                            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`px-4 py-2 rounded-lg text-sm max-w-[80%] ${msg.role === 'user' ? 'bg-blue-100 text-blue-900' : 'bg-white border border-gray-200'}`}>
+                                <span className="font-bold text-xs uppercase opacity-50 block mb-1">{msg.role}</span>
+                                {msg.content}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -286,8 +432,17 @@ export default function BotManagementPage() {
                 <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Mail className="w-5 h-5"/> Captured Leads</h2>
                 <p className="text-sm text-gray-500">Emails captured by the widget during chat sessions.</p>
               </div>
-              <div className="bg-blue-100 text-blue-700 font-bold px-4 py-2 rounded-lg">
-                Total: {leads.length}
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={handleExportCSV}
+                  disabled={leads.length === 0}
+                  className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
+                >
+                  <Download className="w-4 h-4" /> Export CSV
+                </button>
+                <div className="bg-blue-100 text-blue-700 font-bold px-4 py-2 rounded-lg">
+                  Total: {leads.length}
+                </div>
               </div>
             </div>
             
