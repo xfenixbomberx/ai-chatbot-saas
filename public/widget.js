@@ -2,8 +2,9 @@
   const scriptTag = document.currentScript;
   const botId = scriptTag.getAttribute('data-bot-id');
   
-  // Base URL (Update to your live domain when deploying)
-  const BASE_URL = 'http://localhost:3000'; 
+  // Dynamically extract the backend URL based on where this script is hosted
+  const scriptUrl = new URL(scriptTag.src);
+  const BASE_URL = scriptUrl.origin;
 
   if (!botId) {
     console.error('Chatbot Widget: Missing data-bot-id attribute.');
@@ -16,9 +17,15 @@
     const configRes = await fetch(`${BASE_URL}/api/bot/${botId}`);
     if (configRes.ok) {
       const data = await configRes.json();
-      if (data.name) botConfig.name = data.name;
-      if (data.primary_color) botConfig.primary_color = data.primary_color;
-      if (data.icon) botConfig.icon = data.icon;
+      if (data.bot) {
+        if (data.bot.name) botConfig.name = data.bot.name;
+        if (data.bot.primary_color) botConfig.primary_color = data.bot.primary_color;
+        if (data.bot.icon) botConfig.icon = data.bot.icon;
+      } else {
+        if (data.name) botConfig.name = data.name;
+        if (data.primary_color) botConfig.primary_color = data.primary_color;
+        if (data.icon) botConfig.icon = data.icon;
+      }
     }
   } catch(e) {
     console.error('Failed to load bot config.');

@@ -1,37 +1,28 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
-
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
-}
-
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params;
+    const botId = params.id;
     
-    // Fetch only the safe customization data, NO SECRETS
-    const { data, error } = await supabase
+    // Fetch the specific bot from Supabase
+    const { data: bot, error } = await supabase
       .from("chatbots")
-      .select("name, primary_color, icon")
-      .eq("id", id)
+      .select("id, name, primary_color, icon, website_url")
+      .eq("id", botId)
       .single();
 
-    if (error || !data) {
-      return NextResponse.json({ error: "Chatbot not found" }, { status: 404, headers: corsHeaders });
+    if (error || !bot) {
+      return NextResponse.json({ error: "Bot not found" }, { status: 404 });
     }
 
-    return NextResponse.json(data, { headers: corsHeaders });
+    return NextResponse.json({ bot }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

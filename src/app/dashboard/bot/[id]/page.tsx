@@ -14,6 +14,13 @@ export default function BotManagementPage() {
   const [bot, setBot] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"training" | "inbox" | "leads">("training");
   
+  // Edit State
+  const [editName, setEditName] = useState("");
+  const [editColor, setEditColor] = useState("#2563eb");
+  const [editIcon, setEditIcon] = useState("bot");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState("");
+
   // Training State
   const [url, setUrl] = useState("");
   const [isTraining, setIsTraining] = useState(false);
@@ -48,6 +55,9 @@ export default function BotManagementPage() {
     const { data: botData } = await supabase.from("chatbots").select("*").eq("id", botId).single();
     if (botData) {
       setBot(botData);
+      setEditName(botData.name);
+      setEditColor(botData.primary_color || "#2563eb");
+      setEditIcon(botData.icon || "bot");
       if (botData.system_prompt) setCustomPrompt(botData.system_prompt);
     }
 
@@ -192,6 +202,25 @@ export default function BotManagementPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleUpdateBot = async () => {
+    setIsUpdating(true);
+    setUpdateStatus("");
+    const { error } = await supabase.from("chatbots").update({
+      name: editName,
+      primary_color: editColor,
+      icon: editIcon
+    }).eq("id", botId);
+    
+    if (error) {
+      setUpdateStatus("Error updating bot details.");
+    } else {
+      setUpdateStatus("Bot details updated successfully!");
+      setBot((prev: any) => ({ ...prev, name: editName, primary_color: editColor, icon: editIcon }));
+      setTimeout(() => setUpdateStatus(""), 3000);
+    }
+    setIsUpdating(false);
+  };
+
   if (!bot) return <div className="p-8">Loading...</div>;
 
   return (
@@ -285,6 +314,60 @@ export default function BotManagementPage() {
                 )}
               </div>
 
+              {/* Bot Identity & Appearance */}
+              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-indigo-600" />
+                    <h2 className="text-lg font-bold">Bot Identity & Appearance</h2>
+                  </div>
+                  <button 
+                    onClick={handleUpdateBot} 
+                    disabled={isUpdating}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center gap-1"
+                  >
+                    {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Bot Name</label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Brand Color</label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={editColor}
+                        onChange={(e) => setEditColor(e.target.value)}
+                        className="w-10 h-10 p-0 border-0 rounded cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-500 font-mono">{editColor}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Widget Icon</label>
+                    <select
+                      value={editIcon}
+                      onChange={(e) => setEditIcon(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
+                    >
+                      <option value="bot">Robot</option>
+                      <option value="message">Message Bubble</option>
+                      <option value="sparkles">Sparkles</option>
+                    </select>
+                  </div>
+                </div>
+                {updateStatus && <p className={`text-sm mt-2 ${updateStatus.includes('Error') ? 'text-red-600' : 'text-indigo-600'}`}>{updateStatus}</p>}
+              </div>
+
               <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -362,9 +445,20 @@ export default function BotManagementPage() {
             </div>
 
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col h-[600px] overflow-hidden">
-              <div className="border-b border-gray-200 px-6 py-4 bg-gray-50">
-                <h2 className="text-lg font-bold text-gray-900">Test Chatbot</h2>
-                <p className="text-sm text-gray-500">Test how the AI answers based on the training data.</p>
+              <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-start">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Test Chatbot</h2>
+                  <p className="text-sm text-gray-500">Test how the AI answers based on the training data.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/demo/${botId}`);
+                    alert("Demo link copied to clipboard!");
+                  }}
+                  className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                >
+                  Copy Demo Link
+                </button>
               </div>
               <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-gray-50">
                 {chatHistory.length === 0 ? (
