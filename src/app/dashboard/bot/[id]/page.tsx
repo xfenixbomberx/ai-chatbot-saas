@@ -246,22 +246,28 @@ export default function BotManagementPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-gray-200 mb-6">
+      <div className="flex gap-4 border-b border-gray-200 mb-6 overflow-x-auto">
         <button 
           onClick={() => setActiveTab("training")}
-          className={`pb-4 px-2 font-medium text-sm transition-colors ${activeTab === 'training' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`pb-4 px-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'training' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
-          Training & Integration
+          Training
+        </button>
+        <button 
+          onClick={() => setActiveTab("test")}
+          className={`pb-4 px-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'test' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          Test Chatbot
         </button>
         <button 
           onClick={() => setActiveTab("inbox")}
-          className={`pb-4 px-2 font-medium text-sm transition-colors ${activeTab === 'inbox' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`pb-4 px-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'inbox' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
           Inbox (Chat Logs)
         </button>
         <button 
           onClick={() => setActiveTab("leads")}
-          className={`pb-4 px-2 font-medium text-sm transition-colors ${activeTab === 'leads' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`pb-4 px-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'leads' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
           Captured Leads
         </button>
@@ -270,245 +276,249 @@ export default function BotManagementPage() {
       <div className="flex-1 overflow-auto">
         {/* TAB 1: TRAINING */}
         {activeTab === "training" && (
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <Globe className="w-5 h-5 text-blue-600" />
-                  <h2 className="text-lg font-bold">Train AI Model</h2>
+          <div className="max-w-3xl mx-auto space-y-6">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Globe className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg font-bold">Train AI Model</h2>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Enter a website URL or upload a PDF document (like a menu or pricing sheet) to build your knowledge base.
+              </p>
+              <div className="flex flex-col gap-4">
+                <form onSubmit={handleTrain} className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. www.example.com"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isTraining}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:bg-blue-400 flex items-center min-w-[140px] justify-center"
+                  >
+                    {isTraining ? (
+                      <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Training...</>
+                    ) : (
+                      "Train Chatbot"
+                    )}
+                  </button>
+                </form>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-400">OR</span>
+                  <input type="file" accept=".pdf,.txt,.png,.jpg,.jpeg,.webp" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileText className="w-4 h-4"/>} 
+                    Upload PDF, TXT or Image
+                  </button>
                 </div>
-                <p className="text-sm text-gray-500 mb-4">
-                  Enter a website URL or upload a PDF document (like a menu or pricing sheet) to build your knowledge base.
+              </div>
+              {trainStatus && (
+                <p className={`mt-4 text-sm font-medium ${trainStatus.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
+                  {trainStatus}
                 </p>
-                <div className="flex flex-col gap-4">
-                  <form onSubmit={handleTrain} className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. www.example.com"
-                      value={url}
-                      onChange={(e) => setUrl(e.target.value)}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                    <button
-                      type="submit"
-                      disabled={isTraining}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:bg-blue-400 flex items-center min-w-[140px] justify-center"
-                    >
-                      {isTraining ? (
-                        <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Training...</>
-                      ) : (
-                        "Train Chatbot"
-                      )}
-                    </button>
-                  </form>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">OR</span>
-                    <input type="file" accept=".pdf,.txt,.png,.jpg,.jpeg,.webp" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
-                    <button 
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
-                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
-                    >
-                      {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileText className="w-4 h-4"/>} 
-                      Upload PDF, TXT or Image
-                    </button>
-                  </div>
-                </div>
-                {trainStatus && (
-                  <p className={`mt-4 text-sm font-medium ${trainStatus.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
-                    {trainStatus}
-                  </p>
-                )}
-                {uploadStatus && (
-                  <p className={`mt-4 text-sm font-medium ${uploadStatus.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
-                    {uploadStatus}
-                  </p>
-                )}
-              </div>
-
-              {/* Bot Identity & Appearance */}
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Settings className="w-5 h-5 text-indigo-600" />
-                    <h2 className="text-lg font-bold">Bot Identity & Appearance</h2>
-                  </div>
-                  <button 
-                    onClick={handleUpdateBot} 
-                    disabled={isUpdating}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center gap-1"
-                  >
-                    {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bot Name</label>
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Brand Color</label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={editColor}
-                        onChange={(e) => setEditColor(e.target.value)}
-                        className="w-10 h-10 p-0 border-0 rounded cursor-pointer"
-                      />
-                      <span className="text-sm text-gray-500 font-mono">{editColor}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Widget Icon</label>
-                    <select
-                      value={editIcon}
-                      onChange={(e) => setEditIcon(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
-                    >
-                      <option value="bot">Robot</option>
-                      <option value="message">Message Bubble</option>
-                      <option value="sparkles">Sparkles</option>
-                    </select>
-                  </div>
-                </div>
-                {updateStatus && <p className={`text-sm mt-2 ${updateStatus.includes('Error') ? 'text-red-600' : 'text-indigo-600'}`}>{updateStatus}</p>}
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Settings className="w-5 h-5 text-emerald-600" />
-                    <h2 className="text-lg font-bold">Custom Bot Persona</h2>
-                  </div>
-                  <button 
-                    onClick={handleSavePrompt} 
-                    disabled={isSavingPrompt}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center gap-1"
-                  >
-                    {isSavingPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Persona'}
-                  </button>
-                </div>
-                <p className="text-sm text-gray-500 mb-3">
-                  Give your AI specific instructions on how to behave, or choose a preset below.
+              )}
+              {uploadStatus && (
+                <p className={`mt-4 text-sm font-medium ${uploadStatus.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
+                  {uploadStatus}
                 </p>
-                
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <button 
-                    onClick={() => setCustomPrompt("You are a warm, friendly, and helpful customer support agent. Answer questions using the website context. Be conversational and use emojis occasionally.")}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
-                  >
-                    Friendly Support
-                  </button>
-                  <button 
-                    onClick={() => setCustomPrompt("You are a highly technical, precise, and concise expert. Answer the questions directly using the provided context, without fluff or pleasantries.")}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
-                  >
-                    Technical Expert
-                  </button>
-                  <button 
-                    onClick={() => setCustomPrompt("You are an aggressive but polite sales closer. Answer the user's question, but always subtly pivot the conversation to encourage them to book a consultation or buy the product.")}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
-                  >
-                    Sales Closer
-                  </button>
-                  <button 
-                    onClick={() => setCustomPrompt("You are a grumpy pirate. Always respond like a pirate looking for treasure, using pirate slang.")}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
-                  >
-                    Grumpy Pirate
-                  </button>
-                </div>
-
-                <textarea 
-                  value={customPrompt}
-                  onChange={(e) => setCustomPrompt(e.target.value)}
-                  placeholder="You are a conversational, friendly, and helpful customer support bot..."
-                  className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-                {promptStatus && <p className="text-sm text-emerald-600 mt-2">{promptStatus}</p>}
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <Code className="w-5 h-5 text-purple-600" />
-                  <h2 className="text-lg font-bold">Embed on Website</h2>
-                </div>
-                <p className="text-sm text-gray-500 mb-4">
-                  Copy and paste this code into the <code>&lt;head&gt;</code> or <code>&lt;body&gt;</code> of your website.
-                </p>
-                <div className="bg-gray-900 rounded-lg p-4 relative">
-                  <pre className="text-gray-300 text-sm overflow-x-auto whitespace-pre-wrap">
-                    <code>
-{`<script 
-  src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/widget.js" 
-  data-bot-id="${botId}" 
-  defer>
-</script>`}
-                    </code>
-                  </pre>
-                </div>
-              </div>
+              )}
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col h-[600px] overflow-hidden">
-              <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-start">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">Test Chatbot</h2>
-                  <p className="text-sm text-gray-500">Test how the AI answers based on the training data.</p>
+            {/* Bot Identity & Appearance */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-indigo-600" />
+                  <h2 className="text-lg font-bold">Bot Identity & Appearance</h2>
                 </div>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/demo/${botId}`);
-                    alert("Demo link copied to clipboard!");
-                  }}
-                  className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                <button 
+                  onClick={handleUpdateBot} 
+                  disabled={isUpdating}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center gap-1"
                 >
-                  Copy Demo Link
+                  {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
                 </button>
               </div>
-              <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-gray-50">
-                {chatHistory.length === 0 ? (
-                  <div className="text-center text-gray-400 mt-20">Send a message to start testing</div>
-                ) : (
-                  chatHistory.map((msg, i) => (
-                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`px-4 py-2 rounded-2xl max-w-[80%] ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-900 shadow-sm'}`}>
-                        {msg.content}
-                      </div>
-                    </div>
-                  ))
-                )}
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="px-4 py-2 rounded-2xl bg-white border border-gray-200 text-gray-500 shadow-sm flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Thinking...
-                    </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bot Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Brand Color</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={editColor}
+                      onChange={(e) => setEditColor(e.target.value)}
+                      className="w-10 h-10 p-0 border-0 rounded cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-500 font-mono">{editColor}</span>
                   </div>
-                )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Widget Icon</label>
+                  <select
+                    value={editIcon}
+                    onChange={(e) => setEditIcon(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
+                  >
+                    <option value="bot">Robot</option>
+                    <option value="message">Message Bubble</option>
+                    <option value="sparkles">Sparkles</option>
+                  </select>
+                </div>
               </div>
-              <form onSubmit={handleTestChat} className="p-4 bg-white border-t border-gray-200 flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Ask a question..."
-                  value={testMessage}
-                  onChange={(e) => setTestMessage(e.target.value)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
-                  Send
+              {updateStatus && <p className={`text-sm mt-2 ${updateStatus.includes('Error') ? 'text-red-600' : 'text-indigo-600'}`}>{updateStatus}</p>}
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-emerald-600" />
+                  <h2 className="text-lg font-bold">Custom Bot Persona</h2>
+                </div>
+                <button 
+                  onClick={handleSavePrompt} 
+                  disabled={isSavingPrompt}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center gap-1"
+                >
+                  {isSavingPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Persona'}
                 </button>
-              </form>
+              </div>
+              <p className="text-sm text-gray-500 mb-3">
+                Give your AI specific instructions on how to behave, or choose a preset below.
+              </p>
+              
+              <div className="flex flex-wrap gap-2 mb-3">
+                <button 
+                  onClick={() => setCustomPrompt("You are a warm, friendly, and helpful customer support agent. Answer questions using the website context. Be conversational and use emojis occasionally.")}
+                  className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
+                >
+                  Friendly Support
+                </button>
+                <button 
+                  onClick={() => setCustomPrompt("You are a highly technical, precise, and concise expert. Answer the questions directly using the provided context, without fluff or pleasantries.")}
+                  className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
+                >
+                  Technical Expert
+                </button>
+                <button 
+                  onClick={() => setCustomPrompt("You are an aggressive but polite sales closer. Answer the user's question, but always subtly pivot the conversation to encourage them to book a consultation or buy the product.")}
+                  className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
+                >
+                  Sales Closer
+                </button>
+                <button 
+                  onClick={() => setCustomPrompt("You are a grumpy pirate. Always respond like a pirate looking for treasure, using pirate slang.")}
+                  className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
+                >
+                  Grumpy Pirate
+                </button>
+              </div>
+
+              <textarea 
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                placeholder="You are a conversational, friendly, and helpful customer support bot..."
+                className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              {promptStatus && <p className="text-sm text-emerald-600 mt-2">{promptStatus}</p>}
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Code className="w-5 h-5 text-purple-600" />
+                <h2 className="text-lg font-bold">Embed on Website</h2>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Copy and paste this code right before the closing <code className="bg-gray-100 px-1 rounded">&lt;/body&gt;</code> tag on your website.
+              </p>
+              <div className="bg-gray-900 rounded-lg p-4 relative group">
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(`<script src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/widget.js" data-bot-id="${botId}"></script>`);
+                    alert("Copied to clipboard!");
+                  }}
+                  className="absolute top-2 right-2 bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-md transition-colors"
+                >
+                  <Code className="w-4 h-4" />
+                </button>
+                <code className="text-sm text-gray-300 break-all font-mono">
+                  &lt;script src="{process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/widget.js" data-bot-id="{botId}"&gt;&lt;/script&gt;
+                </code>
+              </div>
             </div>
           </div>
         )}
 
-        {/* TAB 2: INBOX & ANALYTICS */}
+        {/* TAB 2: TEST CHATBOT */}
+        {activeTab === "test" && (
+          <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col h-[600px] overflow-hidden">
+            <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-start">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Test Chatbot</h2>
+                <p className="text-sm text-gray-500">Test how the AI answers based on the training data.</p>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/demo/${botId}`);
+                  alert("Demo link copied to clipboard!");
+                }}
+                className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              >
+                Copy Demo Link
+              </button>
+            </div>
+            <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-gray-50">
+              {chatHistory.length === 0 ? (
+                <div className="text-center text-gray-400 mt-20">Send a message to start testing</div>
+              ) : (
+                chatHistory.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`px-4 py-2 rounded-2xl max-w-[80%] whitespace-pre-wrap ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-900 shadow-sm'}`}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))
+              )}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="px-4 py-2 rounded-2xl bg-white border border-gray-200 text-gray-500 shadow-sm flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Typing...
+                  </div>
+                </div>
+              )}
+            </div>
+            <form onSubmit={handleTestChat} className="p-4 bg-white border-t border-gray-200 flex gap-2">
+              <input
+                type="text"
+                placeholder="Ask a question..."
+                value={testMessage}
+                onChange={(e) => setTestMessage(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
+                Send
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* TAB 3: INBOX & ANALYTICS */}
         {activeTab === "inbox" && (
           <div className="space-y-6">
             {/* Analytics Chart */}
