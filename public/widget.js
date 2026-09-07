@@ -14,7 +14,7 @@
   // 1. Fetch the customer's custom branding
   let botConfig = { name: "AI Assistant", primary_color: "#2563eb", icon: "bot" };
   try {
-    const configRes = await fetch(`${BASE_URL}/api/bot/${botId}`);
+    const configRes = await fetch(`${BASE_URL}/api/bot/${botId}?t=${Date.now()}`);
     if (configRes.ok) {
       const data = await configRes.json();
       if (data.bot) {
