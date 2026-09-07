@@ -4,6 +4,8 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 
+export const maxDuration = 60;
+
 // Setup Supabase
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -38,7 +40,11 @@ export async function POST(req: Request) {
     };
 
     try {
-      const response = await fetch(websiteUrl, fetchOptions);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout for the initial root page
+      const response = await fetch(websiteUrl, { ...fetchOptions, signal: controller.signal });
+      clearTimeout(timeoutId);
+      
       const html = await response.text();
       const $ = cheerio.load(html);
       
@@ -123,7 +129,13 @@ export async function POST(req: Request) {
       chunkSize: 1000,
       chunkOverlap: 200,
     });
-    const chunks = await splitter.createDocuments([allText]);
+    let chunks = await splitter.createDocuments([allText]);
+    
+    // Hard cap chunks to prevent Vercel 60s timeouts on massive websites
+    if (chunks.length > 250) {
+      console.warn(`Capping chunks at 250 (was ${chunks.length}) to prevent server timeouts.`);
+      chunks = chunks.slice(0, 250);
+    }
 
     console.log(`[3/4] Generating Embeddings via Gemini (${chunks.length} chunks)...`);
     
