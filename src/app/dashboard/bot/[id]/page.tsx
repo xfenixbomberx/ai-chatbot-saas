@@ -428,12 +428,12 @@ export default function BotManagementPage() {
                 </p>
                 <div className="bg-gray-900 rounded-md p-4 relative flex-1 flex flex-col justify-center">
                   <code className="text-xs text-gray-300 break-all font-mono leading-relaxed block">
-                    &lt;script src="{process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/widget.js" data-bot-id="{botId}"&gt;&lt;/script&gt;
+                    &lt;script src="{process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/widget-v2.js" data-bot-id="{botId}"&gt;&lt;/script&gt;
                   </code>
                 </div>
                 <button 
                   onClick={() => {
-                    navigator.clipboard.writeText(`<script src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/widget.js" data-bot-id="${botId}"></script>`);
+                    navigator.clipboard.writeText(`<script src="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/widget-v2.js" data-bot-id="${botId}"></script>`);
                     alert("Copied to clipboard!");
                   }}
                   className="w-full mt-3 bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"

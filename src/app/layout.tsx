@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col">
         {children}
         <CookieBanner />
-        <script src="https://chatbotconfig.uk/widget.js?v=2" data-bot-id="dfc234a6-7bf4-4c34-af72-a0cd5253680a" async></script>
+        <script src="https://chatbotconfig.uk/widget-v2.js" data-bot-id="dfc234a6-7bf4-4c34-af72-a0cd5253680a" async></script>
       </body>
     </html>
   );
