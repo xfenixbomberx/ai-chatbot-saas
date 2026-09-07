@@ -172,7 +172,7 @@ export default function DemoPage() {
         rel="noopener noreferrer"
         className="mt-8 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors flex items-center gap-2"
       >
-        <Bot className="w-4 h-4" /> Powered by AI Chatbot SaaS
+        <Bot className="w-4 h-4" /> Powered by Chatbotconfig.uk
       </a>
 
     </div>
