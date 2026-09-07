@@ -80,8 +80,8 @@ export async function POST(req: Request) {
         return bScore - aScore; // Highest score first
       });
 
-      // Keep homepage + top 5 most valuable pages (6 total)
-      urlsToScrape = Array.from(new Set([websiteUrl, ...uniqueLinks])).slice(0, 6);
+      // Keep homepage + top 30 most valuable pages (to prevent server timeouts on massive stores)
+      urlsToScrape = Array.from(new Set([websiteUrl, ...uniqueLinks])).slice(0, 30);
     } catch(e) {
       console.warn("Failed to fetch initial page for links.");
       urlsToScrape = [websiteUrl]; // Fallback to just homepage if link extraction fails
