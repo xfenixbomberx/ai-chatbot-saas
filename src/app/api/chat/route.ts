@@ -77,40 +77,51 @@ export async function POST(req: Request) {
     1. TONE & STYLE: Be extremely friendly, highly professional, and conversational. Never sound like a robot. DO NOT use Markdown formatting (no asterisks **, no hashes ###). Instead, use clear paragraph breaks, ALL CAPS for emphasis, and unicode bullet points (•) to make lists easy to read.
     2. GREETINGS: For general pleasantries ("Hi", "How are you"), respond warmly like a real person would. Do not trigger a handoff.
     3. SALES FOCUS: If the user is asking about services, pricing, or features, frame your answer in a way that highlights the value. Gently guide them toward taking action (e.g., "Let me know if you'd like to get started!").
-    4. KNOWLEDGE LIMITS: For questions about the business, answer based ONLY on the provided context. If they ask a specific business question and the answer is absolutely nowhere in the context, DO NOT make up facts. Instead, reply EXACTLY with the word "HANDOFF" (and nothing else).
+    4. KNOWLEDGE LIMITS: For questions about the business, answer based ONLY on the provided context. If they ask a specific business question and the answer is absolutely nowhere in the context, DO NOT make up facts. Instead, immediately call the 'escalate_to_human' tool to alert the team.
     5. TIME AWARENESS: The current local time is ${currentDateTime}. If you suggest calling the business, ALWAYS check the opening hours in the context first. If they are currently closed, politely inform the user that the business is closed right now and ask for their email or advise them to call back when they open.
     
     WEBSITE CONTEXT:
     ${contextText}`;
 
-    // 4. Generate the response using Gemini
+    // 4. Generate the response using Gemini with Tools
     const response = await ai.models.generateContent({
       model: 'gemini-3.6-flash', 
       contents: [
         { role: "user", parts: [{ text: systemPrompt + "\n\nUSER QUESTION: " + message }] }
-      ]
+      ],
+      config: {
+        tools: [{
+          functionDeclarations: [{
+            name: "escalate_to_human",
+            description: "Alert the human team to take over the conversation when the user asks a specific question that is completely absent from the website context, or specifically requests a human representative."
+          }]
+        }]
+      }
     });
 
     let botAnswer = response.text || "";
 
-    // 5. Human Handoff Logic
-    if (botAnswer.trim() === "HANDOFF") {
-      botAnswer = "I don't have enough information to answer that based on the website. I have alerted our human team and they will be in touch shortly!";
-      
-      // Trigger Resend Email Alert in the background
-      fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          from: "AI Support <onboarding@resend.dev>",
-          to: "jordanpotter41@gmail.com",
-          subject: "Human Handoff Alert - AI Support Assistant",
-          html: `<p>Your AI assistant couldn't answer the following question:</p><blockquote>${message}</blockquote><p>Session ID: ${sessionId}</p>`
-        })
-      }).catch(console.error);
+    // 5. Human Handoff Logic via Tool Calling
+    if (response.functionCalls && response.functionCalls.length > 0) {
+      const call = response.functionCalls[0];
+      if (call.name === "escalate_to_human") {
+        botAnswer = "I don't have enough information to answer that based on the website. I have alerted our human team and they will be in touch shortly!";
+        
+        // Trigger Resend Email Alert in the background
+        fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            from: "AI Support <onboarding@resend.dev>",
+            to: "jordanpotter41@gmail.com",
+            subject: "Human Handoff Alert - AI Support Assistant",
+            html: `<p>Your AI assistant couldn't answer the following question:</p><blockquote>${message}</blockquote><p>Session ID: ${sessionId}</p>`
+          })
+        }).catch(console.error);
+      }
     }
 
     // Log the bot message asynchronously

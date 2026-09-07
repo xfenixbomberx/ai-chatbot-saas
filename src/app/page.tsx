@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Bot, MessageSquare, Zap, Shield, ArrowRight, ChevronDown, Star } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Home() {
   return (
@@ -8,11 +11,21 @@ export default function Home() {
       {/* Background Tech Grid & Glow */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-400/20 rounded-full blur-[120px]"></div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-400/20 rounded-full blur-[120px]"
+        ></motion.div>
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
+      <motion.nav 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto"
+      >
         <div className="flex items-center gap-2">
           <Bot className="w-8 h-8 text-blue-600" />
           <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">AI Support Assistant</span>
@@ -28,46 +41,89 @@ export default function Home() {
             Get Started
           </Link>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Hero Section */}
       <main className="relative z-10 max-w-7xl mx-auto px-8 pt-16 pb-20 md:pt-24 text-center">
         
         {/* Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-semibold mb-8 shadow-sm">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-semibold mb-8 shadow-sm"
+        >
           <span className="flex h-2 w-2 rounded-full bg-blue-600 animate-pulse"></span>
           ✨ New: Train AI on your PDF documents
-        </div>
+        </motion.div>
 
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 mb-8 max-w-4xl mx-auto leading-tight">
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 mb-8 max-w-4xl mx-auto leading-tight"
+        >
           Turn your website into a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">24/7 AI Support Agent</span>
-        </h1>
-        <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-          Instantly train a custom AI on your website's data. Embed a beautiful, branded chat widget in seconds and automate your customer support forever.
-        </p>
+        </motion.h1>
         
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed"
+        >
+          Instantly train a custom AI on your website's data. Embed a beautiful, branded chat widget in seconds and automate your customer support forever.
+        </motion.p>
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4"
+        >
           <Link 
             href="/login" 
             className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-transform transform hover:scale-105 flex items-center justify-center shadow-xl shadow-blue-600/20"
           >
             Start Building Now <ArrowRight className="w-5 h-5 ml-2" />
           </Link>
-        </div>
-        <p className="mt-4 text-sm text-gray-500">Starting at £49/month. Cancel anytime.</p>
+        </motion.div>
+        
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="mt-4 text-sm text-gray-500"
+        >
+          Starting at £49/month. Cancel anytime.
+        </motion.p>
         
         {/* Social Proof */}
-        <div className="mt-10 flex flex-col items-center gap-2">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.7 }}
+          className="mt-10 flex flex-col items-center gap-2"
+        >
           <div className="flex gap-1 text-yellow-400">
             {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 fill-current" />)}
           </div>
           <p className="text-sm text-gray-500 font-medium">Trusted by 100+ forward-thinking businesses</p>
-        </div>
+        </motion.div>
 
         {/* Floating Mockup */}
-        <div className="mt-16 w-full max-w-4xl mx-auto relative hidden md:block group">
+        <motion.div 
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.8 }}
+          className="mt-16 w-full max-w-4xl mx-auto relative hidden md:block group"
+        >
           <div className="absolute inset-0 bg-gradient-to-b from-blue-500/20 to-transparent rounded-t-3xl blur-2xl transition-all duration-700 group-hover:bg-blue-500/30"></div>
-          <div className="relative bg-white border border-gray-200 rounded-t-2xl shadow-2xl overflow-hidden flex flex-col transform transition-transform duration-700 hover:-translate-y-2">
+          <motion.div 
+            animate={{ y: [0, -10, 0] }}
+            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+            className="relative bg-white border border-gray-200 rounded-t-2xl shadow-2xl overflow-hidden flex flex-col"
+          >
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
                <div className="flex items-center gap-3">
                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
@@ -85,61 +141,98 @@ export default function Home() {
                </div>
             </div>
             <div className="p-8 bg-gray-50 flex flex-col gap-6 h-72 overflow-hidden relative">
-               <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-sm max-w-[80%] shadow-sm text-sm text-gray-700 text-left">
+               <motion.div 
+                 initial={{ opacity: 0, x: -20 }}
+                 whileInView={{ opacity: 1, x: 0 }}
+                 transition={{ duration: 0.5, delay: 0.2 }}
+                 viewport={{ once: true }}
+                 className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-sm max-w-[80%] shadow-sm text-sm text-gray-700 text-left"
+               >
                  Hi there! 👋 How can I help you scale your support today?
-               </div>
-               <div className="bg-blue-600 text-white p-4 rounded-2xl rounded-tr-sm max-w-[75%] shadow-sm text-sm self-end text-left">
+               </motion.div>
+               <motion.div 
+                 initial={{ opacity: 0, x: 20 }}
+                 whileInView={{ opacity: 1, x: 0 }}
+                 transition={{ duration: 0.5, delay: 0.8 }}
+                 viewport={{ once: true }}
+                 className="bg-blue-600 text-white p-4 rounded-2xl rounded-tr-sm max-w-[75%] shadow-sm text-sm self-end text-left"
+               >
                  Can you handle our customer emails too?
-               </div>
-               <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-sm max-w-[85%] shadow-sm text-sm text-gray-700 text-left">
+               </motion.div>
+               <motion.div 
+                 initial={{ opacity: 0, x: -20 }}
+                 whileInView={{ opacity: 1, x: 0 }}
+                 transition={{ duration: 0.5, delay: 1.4 }}
+                 viewport={{ once: true }}
+                 className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-sm max-w-[85%] shadow-sm text-sm text-gray-700 text-left"
+               >
                  Absolutely. I can capture leads and instantly hand off complex queries to your human team directly via email.
-               </div>
-               {/* Gradient fade at bottom to blend into the section below */}
+               </motion.div>
                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none"></div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
         
         {/* Scroll Arrow */}
-        <div className="mt-8 flex justify-center animate-bounce relative z-20">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2, duration: 0.5 }}
+          className="mt-8 flex justify-center animate-bounce relative z-20"
+        >
           <a href="#features" className="text-gray-400 hover:text-blue-600 transition-colors p-2" aria-label="Scroll down">
             <ChevronDown className="w-8 h-8" />
           </a>
-        </div>
+        </motion.div>
       </main>
 
       {/* Features Section */}
       <section id="features" className="bg-white py-24 border-t border-gray-200 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-8">
-          <div className="text-center mb-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything you need to scale your support</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">Stop answering the same questions manually. Let our intelligent AI agents handle your customers instantly.</p>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-3 gap-12">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Zap className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Instant Training</h3>
-              <p className="text-gray-600">Just paste your website URL. Our system scrapes your content and trains a custom AI model in seconds.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <MessageSquare className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Custom Branding</h3>
-              <p className="text-gray-600">Match the widget to your company. Pick your brand colors, custom bot name, and custom icons to fit your style.</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Shield className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Secure & Reliable</h3>
-              <p className="text-gray-600">Powered by the latest Google Gemini AI models and Supabase vector databases for ultra-fast, accurate responses.</p>
-            </div>
+            {[
+              {
+                icon: <Zap className="w-8 h-8 text-blue-600" />,
+                title: "Instant Training",
+                desc: "Just paste your website URL. Our system scrapes your content and trains a custom AI model in seconds."
+              },
+              {
+                icon: <MessageSquare className="w-8 h-8 text-blue-600" />,
+                title: "Custom Branding",
+                desc: "Match the widget to your company. Pick your brand colors, custom bot name, and custom icons to fit your style."
+              },
+              {
+                icon: <Shield className="w-8 h-8 text-blue-600" />,
+                title: "Secure & Reliable",
+                desc: "Powered by the latest Google Gemini AI models and Supabase vector databases for ultra-fast, accurate responses."
+              }
+            ].map((feat, idx) => (
+              <motion.div 
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: idx * 0.2 }}
+                viewport={{ once: true }}
+                className="text-center"
+              >
+                <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-transform hover:scale-110">
+                  {feat.icon}
+                </div>
+                <h3 className="text-xl font-bold mb-3">{feat.title}</h3>
+                <p className="text-gray-600">{feat.desc}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>

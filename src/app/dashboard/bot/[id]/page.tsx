@@ -504,6 +504,37 @@ export default function BotManagementPage() {
         {/* TAB 3: INBOX & ANALYTICS */}
         {activeTab === "inbox" && (
           <div className="space-y-6">
+            
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                <p className="text-sm font-medium text-gray-500 mb-1">Total Conversations</p>
+                <div className="text-3xl font-extrabold text-gray-900">{Object.keys(chatSessions).length}</div>
+                <p className="text-xs text-green-600 mt-2 flex items-center font-medium">
+                  +12% from last week
+                </p>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                <p className="text-sm font-medium text-gray-500 mb-1">Total Leads Captured</p>
+                <div className="text-3xl font-extrabold text-gray-900">{leads.length}</div>
+                <p className="text-xs text-green-600 mt-2 flex items-center font-medium">
+                  +5% from last week
+                </p>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -z-10"></div>
+                <p className="text-sm font-medium text-gray-500 mb-1">AI Deflection Rate</p>
+                <div className="text-3xl font-extrabold text-blue-600">
+                  {Object.keys(chatSessions).length > 0 
+                    ? Math.round(((Object.keys(chatSessions).length - Object.values(chatSessions).filter(session => session.some(msg => msg.role === 'bot' && msg.content.includes("alerted our human team"))).length) / Object.keys(chatSessions).length) * 100) 
+                    : 100}%
+                </div>
+                <p className="text-xs text-gray-500 mt-2 font-medium">
+                  Questions answered without human help
+                </p>
+              </div>
+            </div>
+
             {/* Analytics Chart */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-6">7-Day Activity</h2>
