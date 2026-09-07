@@ -89,7 +89,8 @@ export async function POST(req: Request) {
 
     console.log(`Discovered pages to scrape:`, urlsToScrape);
 
-    for (const url of urlsToScrape) {
+    // Fetch and parse all pages in parallel
+    const pageContents = await Promise.all(urlsToScrape.map(async (url) => {
       try {
         const response = await fetch(url, fetchOptions);
         const html = await response.text();
@@ -97,12 +98,15 @@ export async function POST(req: Request) {
         $("script, style, noscript, nav, footer, header, iframe").remove();
         const text = $("body").text().replace(/\s+/g, " ").trim();
         if (text && text.length > 50) {
-          allText += "\n\n--- Page: " + url + " ---\n\n" + text;
+          return "\n\n--- Page: " + url + " ---\n\n" + text;
         }
       } catch (e) {
         console.warn(`Failed to scrape ${url}`);
       }
-    }
+      return "";
+    }));
+    
+    allText += pageContents.join("");
 
     if (!allText || allText.length < 50) {
       return NextResponse.json({ error: "Not enough readable text found on the website." }, { status: 400 });
@@ -116,31 +120,32 @@ export async function POST(req: Request) {
     });
     const chunks = await splitter.createDocuments([allText]);
 
-    console.log(`[3/4] Generating Embeddings via Gemini & Saving to DB (${chunks.length} chunks)...`);
-    // 3. Generate Embeddings & Save to DB
-    for (const chunk of chunks) {
-      // Ask Gemini to turn the text chunk into a vector array
-      const embeddingResponse = await ai.models.embedContent({
-        model: 'gemini-embedding-2',
-        contents: chunk.pageContent,
-        config: { outputDimensionality: 768 }
-      });
+    console.log(`[3/4] Generating Embeddings & Saving to DB (${chunks.length} chunks) in parallel batches...`);
+    // 3. Generate Embeddings & Save to DB in Parallel Batches
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+      const batch = chunks.slice(i, i + BATCH_SIZE);
       
-      const embedding = embeddingResponse.embeddings?.[0]?.values;
-      if (!embedding) continue;
-
-      // Save the text chunk AND its vector embedding into our pgvector database
-      const { error } = await supabase
-        .from("bot_documents")
-        .insert({
-          bot_id: botId,
-          content: chunk.pageContent,
-          embedding: embedding,
-        });
-        
-      if (error) {
-        console.error("Database Insert Error:", error);
-      }
+      await Promise.all(batch.map(async (chunk) => {
+        try {
+          const embeddingResponse = await ai.models.embedContent({
+            model: 'gemini-embedding-2',
+            contents: chunk.pageContent,
+            config: { outputDimensionality: 768 }
+          });
+          
+          const embedding = embeddingResponse.embeddings?.[0]?.values;
+          if (embedding) {
+            await supabase.from("bot_documents").insert({
+              bot_id: botId,
+              content: chunk.pageContent,
+              embedding: embedding,
+            });
+          }
+        } catch (err) {
+          console.error("Failed to embed/save chunk:", err);
+        }
+      }));
     }
 
     console.log(`[4/4] Training complete!`);
