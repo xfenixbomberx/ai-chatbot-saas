@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Globe, Loader2, Link2, Code, Mail, MessageSquare, FileText, Download, Settings } from "lucide-react";
+import { ArrowLeft, Globe, Loader2, Link2, Code, Mail, MessageSquare, FileText, Download, Settings, TrendingUp, Users, ShieldCheck, User } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function BotManagementPage() {
@@ -519,74 +519,100 @@ export default function BotManagementPage() {
 
         {/* TAB 3: INBOX & ANALYTICS */}
         {activeTab === "inbox" && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <p className="text-sm font-medium text-gray-500 mb-1">Total Conversations</p>
-                <div className="text-3xl font-extrabold text-gray-900">{Object.keys(chatSessions).length}</div>
-                <p className="text-xs text-green-600 mt-2 flex items-center font-medium">
-                  +12% from last week
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] p-6 relative overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all">
+                <div className="flex justify-between items-start mb-4">
+                  <p className="text-sm font-semibold text-gray-500">Total Conversations</p>
+                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:scale-110 transition-transform">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="text-4xl font-black text-gray-900 tracking-tight">{Object.keys(chatSessions).length}</div>
+                <p className="text-xs text-emerald-600 mt-3 flex items-center font-medium bg-emerald-50 w-max px-2 py-1 rounded-full">
+                  <TrendingUp className="w-3 h-3 mr-1" /> +12% this week
                 </p>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <p className="text-sm font-medium text-gray-500 mb-1">Total Leads Captured</p>
-                <div className="text-3xl font-extrabold text-gray-900">{leads.length}</div>
-                <p className="text-xs text-green-600 mt-2 flex items-center font-medium">
-                  +5% from last week
+              
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] p-6 relative overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all">
+                <div className="flex justify-between items-start mb-4">
+                  <p className="text-sm font-semibold text-gray-500">Total Leads</p>
+                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg group-hover:scale-110 transition-transform">
+                    <Users className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="text-4xl font-black text-gray-900 tracking-tight">{leads.length}</div>
+                <p className="text-xs text-emerald-600 mt-3 flex items-center font-medium bg-emerald-50 w-max px-2 py-1 rounded-full">
+                  <TrendingUp className="w-3 h-3 mr-1" /> +5% this week
                 </p>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -z-10"></div>
-                <p className="text-sm font-medium text-gray-500 mb-1">AI Deflection Rate</p>
-                <div className="text-3xl font-extrabold text-blue-600">
+
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-lg p-6 relative overflow-hidden group hover:shadow-xl transition-all text-white">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                <div className="flex justify-between items-start mb-4 relative z-10">
+                  <p className="text-sm font-semibold text-blue-100">AI Deflection Rate</p>
+                  <div className="p-2 bg-white/20 rounded-lg group-hover:scale-110 transition-transform">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="text-4xl font-black tracking-tight relative z-10">
                   {Object.keys(chatSessions).length > 0 
                     ? Math.round(((Object.keys(chatSessions).length - Object.values(chatSessions).filter(session => session.some(msg => msg.role === 'bot' && msg.content.includes("alerted our human team"))).length) / Object.keys(chatSessions).length) * 100) 
                     : 100}%
                 </div>
-                <p className="text-xs text-gray-500 mt-2 font-medium">
-                  Questions answered without human help
+                <p className="text-xs text-blue-100 mt-3 font-medium relative z-10">
+                  Resolved without human help
                 </p>
               </div>
             </div>
 
             {/* Analytics Chart */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-6">7-Day Activity</h2>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] p-6">
+              <h2 className="text-xl font-bold text-gray-900 tracking-tight mb-6">7-Day Activity</h2>
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
-                    <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                    <Line type="monotone" dataKey="Messages" stroke="#3b82f6" strokeWidth={3} dot={{r: 4, strokeWidth: 2}} activeDot={{r: 6}} />
-                    <Line type="monotone" dataKey="Leads" stroke="#10b981" strokeWidth={3} dot={{r: 4, strokeWidth: 2}} activeDot={{r: 6}} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dx={-10} />
+                    <Tooltip contentStyle={{borderRadius: '12px', border: '1px solid #f3f4f6', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} />
+                    <Line type="monotone" dataKey="Messages" stroke="#3b82f6" strokeWidth={3} dot={{r: 4, strokeWidth: 2, fill: '#fff'}} activeDot={{r: 6, strokeWidth: 0}} />
+                    <Line type="monotone" dataKey="Leads" stroke="#4f46e5" strokeWidth={3} dot={{r: 4, strokeWidth: 2, fill: '#fff'}} activeDot={{r: 6, strokeWidth: 0}} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* Chat Logs */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-gray-200 bg-gray-50">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Chat Logs</h2>
-                <p className="text-sm text-gray-500">Read the conversations your customers are having with the AI.</p>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 tracking-tight">Recent Conversations</h2>
+                  <p className="text-sm text-gray-500 mt-1">Review exactly how the AI is handling customer queries.</p>
+                </div>
               </div>
-              <div className="p-6">
+              <div className="p-0">
                 {Object.keys(chatSessions).length === 0 ? (
-                  <p className="text-gray-500">No chat history found yet.</p>
+                  <div className="p-12 text-center text-gray-500">No chat history found yet.</div>
                 ) : (
-                  <div className="space-y-8">
+                  <div className="divide-y divide-gray-100">
                     {Object.entries(chatSessions).map(([sessionId, msgs]) => (
-                      <div key={sessionId} className="border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="bg-gray-100 px-4 py-2 text-xs font-mono text-gray-500">Session: {sessionId}</div>
-                        <div className="p-4 space-y-3 bg-gray-50 max-h-[300px] overflow-y-auto">
+                      <div key={sessionId} className="p-6 hover:bg-gray-50/50 transition-colors">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                            <User className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold text-gray-900 font-mono">{sessionId.substring(0,8)}...</div>
+                            <div className="text-xs text-gray-400">{msgs.length} messages</div>
+                          </div>
+                        </div>
+                        <div className="space-y-3 bg-white border border-gray-100 rounded-xl p-4 shadow-sm max-h-[300px] overflow-y-auto">
                           {msgs.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`px-4 py-2 rounded-lg text-sm max-w-[80%] ${msg.role === 'user' ? 'bg-blue-100 text-blue-900' : 'bg-white border border-gray-200'}`}>
-                                <span className="font-bold text-xs uppercase opacity-50 block mb-1">{msg.role}</span>
+                              <div className={`px-4 py-2.5 rounded-2xl text-sm max-w-[85%] ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}>
                                 {msg.content}
                               </div>
                             </div>
@@ -603,47 +629,65 @@ export default function BotManagementPage() {
 
         {/* TAB 3: LEADS */}
         {activeTab === "leads" && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-             <div className="p-6 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] overflow-hidden">
+             <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white">
               <div>
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Mail className="w-5 h-5"/> Captured Leads</h2>
-                <p className="text-sm text-gray-500">Emails captured by the widget during chat sessions.</p>
+                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Captured Leads</h2>
+                <p className="text-sm text-gray-500 mt-1">Export your captured emails to your CRM.</p>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-indigo-50 text-indigo-700 font-bold px-4 py-2 rounded-xl text-sm border border-indigo-100">
+                  {leads.length} Leads
+                </div>
                 <button 
                   onClick={handleExportCSV}
                   disabled={leads.length === 0}
-                  className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl font-medium text-sm transition-colors disabled:opacity-50"
                 >
                   <Download className="w-4 h-4" /> Export CSV
                 </button>
-                <div className="bg-blue-100 text-blue-700 font-bold px-4 py-2 rounded-lg">
-                  Total: {leads.length}
-                </div>
               </div>
             </div>
             
             {leads.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">
-                No leads captured yet. Once users enter their email in the widget, they will appear here.
+              <div className="p-16 text-center">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-8 h-8 text-gray-300" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">No leads yet</h3>
+                <p className="text-gray-500 mt-1">Once users enter their email in the widget, they will appear here.</p>
               </div>
             ) : (
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-6 py-4 text-sm font-semibold text-gray-600">Email Address</th>
-                    <th className="px-6 py-4 text-sm font-semibold text-gray-600">Date Captured</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leads.map((lead) => (
-                    <tr key={lead.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-medium">{lead.email}</td>
-                      <td className="px-6 py-4 text-gray-500">{new Date(lead.captured_at).toLocaleString()}</td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50/50 border-b border-gray-100">
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Email Address</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Date Captured</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {leads.map((lead) => (
+                      <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold text-xs border border-blue-200">
+                            {lead.email.charAt(0).toUpperCase()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-medium text-gray-900">{lead.email}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">{new Date(lead.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                            Captured
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}
