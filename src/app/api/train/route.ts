@@ -89,10 +89,15 @@ export async function POST(req: Request) {
 
     console.log(`Discovered pages to scrape:`, urlsToScrape);
 
-    // Fetch and parse all pages in parallel
+    // Fetch and parse all pages in parallel with a timeout to prevent hanging
     const pageContents = await Promise.all(urlsToScrape.map(async (url) => {
       try {
-        const response = await fetch(url, fetchOptions);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout per page
+        
+        const response = await fetch(url, { ...fetchOptions, signal: controller.signal });
+        clearTimeout(timeoutId);
+        
         const html = await response.text();
         const $ = cheerio.load(html);
         $("script, style, noscript, nav, footer, header, iframe").remove();
@@ -101,7 +106,7 @@ export async function POST(req: Request) {
           return "\n\n--- Page: " + url + " ---\n\n" + text;
         }
       } catch (e) {
-        console.warn(`Failed to scrape ${url}`);
+        console.warn(`Failed or timed out scraping ${url}`);
       }
       return "";
     }));
