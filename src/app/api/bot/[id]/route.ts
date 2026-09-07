@@ -25,7 +25,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     // Fetch the specific bot from Supabase
     const { data: bot, error } = await supabase
       .from("chatbots")
-      .select("id, name, primary_color, icon, website_url")
+      .select("*")
       .eq("id", botId)
       .single();
 

@@ -12,7 +12,7 @@ export default function BotManagementPage() {
   const botId = params.id as string;
 
   const [bot, setBot] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"training" | "test" | "inbox" | "leads">("training");
+  const [activeTab, setActiveTab] = useState<"training" | "test" | "inbox" | "leads" | "settings">("training");
   
   // Edit State
   const [editName, setEditName] = useState("");
@@ -20,6 +20,11 @@ export default function BotManagementPage() {
   const [editIcon, setEditIcon] = useState("bot");
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateStatus, setUpdateStatus] = useState("");
+
+  // Premium Settings State
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [removeBranding, setRemoveBranding] = useState(false);
+  const [isSavingPremium, setIsSavingPremium] = useState(false);
 
   // Training State
   const [url, setUrl] = useState("");
@@ -59,7 +64,9 @@ export default function BotManagementPage() {
       setEditName(botData.name);
       setEditColor(botData.primary_color || "#2563eb");
       setEditIcon(botData.icon || "bot");
-      if (botData.system_prompt) setCustomPrompt(botData.system_prompt);
+      setCustomPrompt(botData.system_prompt || "");
+      if (botData.webhook_url) setWebhookUrl(botData.webhook_url);
+      if (botData.remove_branding) setRemoveBranding(botData.remove_branding);
       if (botData.website_url) {
         // Pre-fill the scraper input with their website so they don't have to type it again
         setUrl(prev => prev ? prev : botData.website_url);
@@ -160,14 +167,32 @@ export default function BotManagementPage() {
   const handleSavePrompt = async () => {
     setIsSavingPrompt(true);
     setPromptStatus("");
-    const { error } = await supabase.from("chatbots").update({ system_prompt: customPrompt }).eq("id", botId);
-    if (error) {
-      setPromptStatus("Error saving persona.");
-    } else {
+    try {
+      const { error } = await supabase.from("chatbots").update({ system_prompt: customPrompt }).eq("id", botId);
+      if (error) throw error;
       setPromptStatus("Persona saved successfully!");
       setTimeout(() => setPromptStatus(""), 3000);
+    } catch (e: any) {
+      setPromptStatus("Error saving persona.");
+    } finally {
+      setIsSavingPrompt(false);
     }
-    setIsSavingPrompt(false);
+  };
+
+  const handleSavePremiumSettings = async () => {
+    setIsSavingPremium(true);
+    try {
+      const { error } = await supabase.from("chatbots").update({
+        webhook_url: webhookUrl,
+        remove_branding: removeBranding
+      }).eq("id", botId);
+      if (error) throw error;
+      alert("Premium settings saved successfully!");
+    } catch (e: any) {
+      alert("Please ensure the 'webhook_url' (text) and 'remove_branding' (boolean) columns exist in your Supabase 'chatbots' table.");
+    } finally {
+      setIsSavingPremium(false);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -272,6 +297,12 @@ export default function BotManagementPage() {
           className={`pb-4 px-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'leads' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
         >
           Captured Leads
+        </button>
+        <button 
+          onClick={() => setActiveTab("settings")}
+          className={`pb-4 px-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'settings' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          Settings
         </button>
       </div>
 
@@ -592,6 +623,21 @@ export default function BotManagementPage() {
                   <h2 className="text-xl font-bold text-gray-900 tracking-tight">Recent Conversations</h2>
                   <p className="text-sm text-gray-500 mt-1">Review exactly how the AI is handling customer queries.</p>
                 </div>
+                <button 
+                  onClick={() => {
+                    const csvContent = "data:text/csv;charset=utf-8,Session ID,Role,Message\n" + 
+                      Object.entries(chatSessions).flatMap(([sId, msgs]) => msgs.map(m => `${sId},${m.role},"${m.content.replace(/"/g, '""')}"`)).join("\n");
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodeURI(csvContent));
+                    link.setAttribute("download", `chat_logs_${botId}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                  }}
+                  disabled={Object.keys(chatSessions).length === 0}
+                  className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl font-medium text-sm transition-colors disabled:opacity-50"
+                >
+                  <Download className="w-4 h-4" /> Export Chat Logs
+                </button>
               </div>
               <div className="p-0">
                 {Object.keys(chatSessions).length === 0 ? (
@@ -689,6 +735,54 @@ export default function BotManagementPage() {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB 5: SETTINGS */}
+        {activeTab === "settings" && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] overflow-hidden max-w-2xl">
+            <div className="p-6 border-b border-gray-100 bg-white">
+              <h2 className="text-xl font-bold text-gray-900 tracking-tight">Integrations & Whitelabel</h2>
+              <p className="text-sm text-gray-500 mt-1">Configure premium enterprise features.</p>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Webhook URL (Zapier, Make, etc)</label>
+                <p className="text-xs text-gray-500 mb-2">We will fire a POST request to this URL whenever a lead is captured.</p>
+                <input 
+                  type="text" 
+                  value={webhookUrl} 
+                  onChange={e => setWebhookUrl(e.target.value)} 
+                  placeholder="https://hooks.zapier.com/hooks/catch/..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-between border-t border-gray-100 pt-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700">Remove Branding (Whitelabel)</h3>
+                  <p className="text-xs text-gray-500">Hide the "Powered by ChatBot Config" watermark on your widget.</p>
+                </div>
+                <button 
+                  onClick={() => setRemoveBranding(!removeBranding)}
+                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${removeBranding ? 'bg-blue-600' : 'bg-gray-200'}`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full absolute transition-transform ${removeBranding ? 'translate-x-7' : 'translate-x-1'}`}></div>
+                </button>
+              </div>
+
+              <div className="border-t border-gray-100 pt-6 flex justify-end">
+                <button 
+                  onClick={handleSavePremiumSettings}
+                  disabled={isSavingPremium}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2 rounded-xl font-medium transition-colors flex items-center gap-2"
+                >
+                  {isSavingPremium ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Save Premium Settings
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

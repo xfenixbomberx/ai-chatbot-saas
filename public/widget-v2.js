@@ -21,10 +21,12 @@
         if (data.bot.name) botConfig.name = data.bot.name;
         if (data.bot.primary_color) botConfig.primary_color = data.bot.primary_color;
         if (data.bot.icon) botConfig.icon = data.bot.icon;
+        if (data.bot.remove_branding) botConfig.remove_branding = data.bot.remove_branding;
       } else {
         if (data.name) botConfig.name = data.name;
         if (data.primary_color) botConfig.primary_color = data.primary_color;
         if (data.icon) botConfig.icon = data.icon;
+        if (data.remove_branding) botConfig.remove_branding = data.remove_branding;
       }
     }
   } catch(e) {
@@ -181,6 +183,11 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
         </button>
       </form>
+      ${!botConfig.remove_branding ? `
+      <div style="text-align: center; padding: 6px; font-size: 10px; color: #9ca3af; background: white; border-top: 1px solid #f3f4f6;">
+        Powered by <a href="https://chatbotconfig.uk" target="_blank" style="color: #6b7280; text-decoration: none; font-weight: 600;">ChatBot Config</a>
+      </div>
+      ` : ''}
     </div>
     <button id="chatbot-widget-button">
       ${iconSvg}

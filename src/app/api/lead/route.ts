@@ -24,6 +24,23 @@ export async function POST(req: Request) {
 
     if (error) throw error;
 
+    // Fire webhook if configured (Phase 3 Integration)
+    try {
+      const { data: botInfo } = await supabase.from("chatbots").select("*").eq("id", botId).single();
+      if (botInfo && botInfo.webhook_url) {
+        fetch(botInfo.webhook_url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "lead_captured",
+            bot_id: botId,
+            bot_name: botInfo.name,
+            lead: data
+          })
+        }).catch(err => console.error("Webhook firing failed:", err));
+      }
+    } catch(e) {}
+
     return NextResponse.json({ success: true, lead: data });
   } catch (error: any) {
     console.error("Error capturing lead:", error);
