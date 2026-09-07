@@ -59,6 +59,10 @@ export default function BotManagementPage() {
       setEditColor(botData.primary_color || "#2563eb");
       setEditIcon(botData.icon || "bot");
       if (botData.system_prompt) setCustomPrompt(botData.system_prompt);
+      if (botData.website_url) {
+        // Pre-fill the scraper input with their website so they don't have to type it again
+        setUrl(prev => prev ? prev : botData.website_url);
+      }
     }
 
     if (activeTab === "leads" || activeTab === "inbox") {
@@ -114,7 +118,6 @@ export default function BotManagementPage() {
       const data = await res.json();
       if (data.success) {
         setTrainStatus(`Success! Trained on ${data.chunksProcessed} data chunks across ${data.pagesScraped || 1} pages.`);
-        setUrl("");
       } else {
         setTrainStatus(`Error: ${data.error}`);
       }
