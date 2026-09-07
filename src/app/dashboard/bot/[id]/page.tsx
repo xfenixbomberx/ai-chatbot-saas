@@ -106,7 +106,7 @@ export default function BotManagementPage() {
     }
 
     setIsTraining(true);
-    setTrainStatus("Scraping website... This may take up to a minute.");
+    setTrainStatus("Training Bot... This may take a few minutes.");
 
     try {
       const res = await fetch("/api/train", {
@@ -294,7 +294,7 @@ export default function BotManagementPage() {
                       disabled={isTraining}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:bg-blue-400 flex items-center"
                     >
-                      {isTraining ? <Loader2 className="w-5 h-5 animate-spin" /> : "Scrape & Train"}
+                      {isTraining ? <Loader2 className="w-5 h-5 animate-spin" /> : "Train Chatbot"}
                     </button>
                   </form>
                   <div className="flex items-center gap-2">

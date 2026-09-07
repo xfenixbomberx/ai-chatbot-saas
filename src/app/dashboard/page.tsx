@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Plus, Bot, Globe, X, Trash2, Lock, CheckCircle2, Shield } from "lucide-react";
+import { Plus, Bot, Globe, X, Trash2, Lock, CheckCircle2, Shield, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [botColor, setBotColor] = useState("#2563eb");
   const [botIcon, setBotIcon] = useState("bot");
   const [isLoading, setIsLoading] = useState(false);
+  const [isTrainingAll, setIsTrainingAll] = useState(false);
   
   const [bots, setBots] = useState<any[]>([]);
   const [isFetching, setIsFetching] = useState(true);
@@ -98,6 +99,30 @@ export default function DashboardPage() {
       alert("Failed to connect to checkout.");
       setIsCheckoutLoading(false);
     }
+  };
+
+  const handleTrainAll = async () => {
+    if (!bots || bots.length === 0) return;
+    setIsTrainingAll(true);
+    let successCount = 0;
+    
+    for (const bot of bots) {
+      if (bot.website_url) {
+        try {
+          const res = await fetch("/api/train", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ botId: bot.id, websiteUrl: bot.website_url }),
+          });
+          if (res.ok) successCount++;
+        } catch (error) {
+          console.error(`Failed to train bot ${bot.name}`, error);
+        }
+      }
+    }
+    
+    setIsTrainingAll(false);
+    alert(`Successfully trained ${successCount} chatbots!`);
   };
 
   const handleCreateBot = async (e: React.FormEvent) => {
@@ -265,13 +290,23 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold text-gray-900">My Chatbots</h1>
           <p className="text-gray-500 mt-1">Manage and train your AI assistants.</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Create Chatbot
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={handleTrainAll}
+            disabled={isTrainingAll || bots.length === 0}
+            className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
+          >
+            <RefreshCw className={`w-5 h-5 mr-2 ${isTrainingAll ? "animate-spin" : ""}`} />
+            {isTrainingAll ? "Training All..." : "Train All"}
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Create Chatbot
+          </button>
+        </div>
       </div>
 
       {isFetching ? (
