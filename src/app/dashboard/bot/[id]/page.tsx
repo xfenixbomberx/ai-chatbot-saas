@@ -232,7 +232,7 @@ export default function BotManagementPage() {
   if (!bot) return <div className="p-8">Loading...</div>;
 
   return (
-    <div className="p-8 max-w-6xl mx-auto h-screen flex flex-col">
+    <div className="p-8 w-full max-w-[1600px] mx-auto h-screen flex flex-col">
       <div className="flex items-center gap-4 mb-8">
         <button onClick={() => router.push("/dashboard")} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
           <ArrowLeft className="w-5 h-5" />
@@ -276,7 +276,7 @@ export default function BotManagementPage() {
       <div className="flex-1 overflow-auto">
         {/* TAB 1: TRAINING */}
         {activeTab === "training" && (
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Globe className="w-5 h-5 text-blue-600" />
@@ -467,7 +467,7 @@ export default function BotManagementPage() {
 
         {/* TAB 2: TEST CHATBOT */}
         {activeTab === "test" && (
-          <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col h-[600px] overflow-hidden">
+          <div className="w-full max-w-5xl mx-auto bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col h-[600px] overflow-hidden">
             <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-start">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Test Chatbot</h2>
