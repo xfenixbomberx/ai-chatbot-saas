@@ -142,32 +142,44 @@ export async function POST(req: Request) {
     // 3. Generate Embeddings & Save to DB (Optimized Bulk Insert)
     const dbRecords: { bot_id: string; content: string; embedding: number[] }[] = [];
     
-    // Process embeddings in smaller parallel chunks to prevent Gemini Rate Limits
-    const BATCH_SIZE = 5;
+    // Process embeddings using Gemini's REST batch API to bypass Vercel timeouts
+    // The REST API batchEmbedContents can process up to 100 chunks in a single HTTP request!
+    const BATCH_SIZE = 100;
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
       const batch = chunks.slice(i, i + BATCH_SIZE);
-      await Promise.all(batch.map(async (chunk) => {
-        try {
-          const embeddingResponse = await ai.models.embedContent({
-            model: 'gemini-embedding-2',
-            contents: chunk.pageContent,
-            config: { outputDimensionality: 768 }
-          });
-          
-          const embedding = embeddingResponse.embeddings?.[0]?.values;
-          if (embedding) {
-            dbRecords.push({
-              bot_id: botId,
-              content: chunk.pageContent,
-              embedding: embedding,
-            });
-          }
-        } catch (err) {
-          console.error("Failed to embed chunk:", err);
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:batchEmbedContents?key=${process.env.GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requests: batch.map(chunk => ({
+              model: 'models/gemini-embedding-2',
+              content: { parts: [{ text: chunk.pageContent }] },
+              outputDimensionality: 768
+            }))
+          })
+        });
+        
+        if (!response.ok) {
+          console.error("Gemini batch embed failed:", await response.text());
+          continue;
         }
-      }));
-      // Add a tiny delay between batches to respect free-tier rate limits
-      await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const data = await response.json();
+        if (data.embeddings) {
+          data.embeddings.forEach((emb: any, idx: number) => {
+             if (emb.values) {
+               dbRecords.push({
+                 bot_id: botId,
+                 content: batch[idx].pageContent,
+                 embedding: emb.values
+               });
+             }
+          });
+        }
+      } catch (err) {
+        console.error("Failed to batch embed chunk:", err);
+      }
     }
 
     if (dbRecords.length > 0) {
