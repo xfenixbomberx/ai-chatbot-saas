@@ -12,7 +12,7 @@ export default function BotManagementPage() {
   const botId = params.id as string;
 
   const [bot, setBot] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"training" | "inbox" | "leads">("training");
+  const [activeTab, setActiveTab] = useState<"training" | "test" | "inbox" | "leads">("training");
   
   // Edit State
   const [editName, setEditName] = useState("");
