@@ -142,8 +142,8 @@ export async function POST(req: Request) {
     // 3. Generate Embeddings & Save to DB (Optimized Bulk Insert)
     const dbRecords: { bot_id: string; content: string; embedding: number[] }[] = [];
     
-    // Process embeddings in larger parallel chunks, but don't hit the DB yet
-    const BATCH_SIZE = 20;
+    // Process embeddings in smaller parallel chunks to prevent Gemini Rate Limits
+    const BATCH_SIZE = 5;
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
       const batch = chunks.slice(i, i + BATCH_SIZE);
       await Promise.all(batch.map(async (chunk) => {
@@ -166,6 +166,8 @@ export async function POST(req: Request) {
           console.error("Failed to embed chunk:", err);
         }
       }));
+      // Add a tiny delay between batches to respect free-tier rate limits
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     if (dbRecords.length > 0) {
@@ -179,6 +181,6 @@ export async function POST(req: Request) {
     
   } catch (error: any) {
     console.error("Training error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || "An error occurred during training." }, { status: 500 });
   }
 }

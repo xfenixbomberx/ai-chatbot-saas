@@ -292,9 +292,13 @@ export default function BotManagementPage() {
                     <button
                       type="submit"
                       disabled={isTraining}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:bg-blue-400 flex items-center"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:bg-blue-400 flex items-center min-w-[140px] justify-center"
                     >
-                      {isTraining ? <Loader2 className="w-5 h-5 animate-spin" /> : "Train Chatbot"}
+                      {isTraining ? (
+                        <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Training...</>
+                      ) : (
+                        "Train Chatbot"
+                      )}
                     </button>
                   </form>
                   <div className="flex items-center gap-2">
@@ -326,7 +330,7 @@ export default function BotManagementPage() {
               <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-indigo-600" />
+                    <Settings className="w-5 h-5 text-indigo-600" />
                     <h2 className="text-lg font-bold">Bot Identity & Appearance</h2>
                   </div>
                   <button 
