@@ -34,12 +34,12 @@
   // 2. Determine which SVG icon to use
   let iconSvg = '';
   if (botConfig.icon === 'message') {
-    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
+    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.03 2 11c0 2.87 1.54 5.43 3.91 7.12.35.25.59.63.66 1.05.12.72.01 1.78-.4 2.65a.5.5 0 0 0 .66.66c1.64-.78 2.94-1.32 3.86-1.55.33-.08.68-.08 1.01-.01A10.74 10.74 10.74 0 0 0 12 20c5.523 0 10-4.03 10-9s-4.477-9-10-9z"/></svg>`;
   } else if (botConfig.icon === 'sparkles') {
-    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>`;
+    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.67a2.12 2.12 0 0 0 1.155 1.156l4.67 2.31a.53.53 0 0 1 0 .95l-4.67 2.31a2.12 2.12 0 0 0-1.156 1.155l-2.31 4.67a.53.53 0 0 1-.95 0l-2.31-4.67a2.12 2.12 0 0 0-1.155-1.156l-4.67-2.31a.53.53 0 0 1 0-.95l4.67-2.31a2.12 2.12 0 0 0 1.156-1.155l2.31-4.67z"/><path d="M19.97 18.03a.35.35 0 0 1 .63 0l.69 1.39c.07.15.19.27.34.34l1.39.69a.35.35 0 0 1 0 .63l-1.39.69a.46.46 0 0 0-.34.34l-.69 1.39a.35.35 0 0 1-.63 0l-.69-1.39a.46.46 0 0 0-.34-.34l-1.39-.69a.35.35 0 0 1 0-.63l1.39-.69a.46.46 0 0 0 .34-.34l.69-1.39z"/></svg>`;
   } else {
-    // Default bot icon
-    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M12 8v4"></path><path d="M8 12h8"></path></svg>`;
+    // Default modern robot icon
+    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 0 1 2 2v2h3a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-7a4 4 0 0 1 4-4h3V4a2 2 0 0 1 2-2zm3 10a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>`;
   }
 
   // 3. Inject CSS with Dynamic Brand Color
