@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       const $ = cheerio.load(html);
       
       // Find internal links and prioritize valuable pages
-      const valuableKeywords = ["service", "treatment", "price", "fee", "about", "faq", "contact"];
+      const valuableKeywords = ["service", "treatment", "price", "fee", "about", "faq", "contact", "shipping", "return", "policy", "help"];
       const allLinks: string[] = [];
       
       $("a").each((i, link) => {
