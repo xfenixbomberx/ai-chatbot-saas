@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Chatbot SaaS | Automate Your Customer Support",
+  title: "ChatBot Config | Automate Your Customer Support",
   description: "Capture leads and support customers 24/7 with custom-trained AI assistants.",
 };
 
