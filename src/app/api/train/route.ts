@@ -45,6 +45,10 @@ export async function POST(req: Request) {
       const response = await fetch(websiteUrl, { ...fetchOptions, signal: controller.signal });
       clearTimeout(timeoutId);
       
+      // Handle redirects (e.g., example.com -> www.example.com)
+      const finalUrl = response.url;
+      const baseUrl = getBaseUrl(finalUrl);
+      
       const html = await response.text();
       const $ = cheerio.load(html);
       

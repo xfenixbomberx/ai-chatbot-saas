@@ -54,6 +54,15 @@ export async function POST(req: Request) {
     // 3. Construct the prompt with the found context
     const contextText = matchData?.map((doc: any) => doc.content).join("\n\n") || "No relevant context found on the website.";
     
+    // Extract citation URL from the context
+    let citationUrl = null;
+    if (matchData && matchData.length > 0) {
+      const urlMatch = matchData[0].content.match(/--- Page: (https?:\/\/[^\s]+) ---/);
+      if (urlMatch) {
+        citationUrl = urlMatch[1];
+      }
+    }
+
     // Fetch custom prompt if it exists
     const { data: botData } = await supabase.from('chatbots').select('system_prompt').eq('id', botId).single();
     
@@ -102,9 +111,11 @@ export async function POST(req: Request) {
     let botAnswer = response.text || "";
 
     // 5. Human Handoff Logic via Tool Calling
+    let isHandoff = false;
     if (response.functionCalls && response.functionCalls.length > 0) {
       const call = response.functionCalls[0];
       if (call.name === "escalate_to_human") {
+        isHandoff = true;
         botAnswer = "I don't have enough information to answer that based on the website. I have alerted our human team and they will be in touch shortly!";
         
         // Trigger Resend Email Alert in the background
@@ -133,7 +144,11 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({ answer: botAnswer }, { headers: corsHeaders });
+    return NextResponse.json({ 
+      answer: botAnswer, 
+      citation: isHandoff ? null : citationUrl,
+      isHandoff: isHandoff 
+    }, { headers: corsHeaders });
   } catch (error: any) {
     console.error("Chat error:", error);
     return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });

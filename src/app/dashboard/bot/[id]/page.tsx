@@ -43,8 +43,9 @@ export default function BotManagementPage() {
   
   // Chat Tester State
   const [testMessage, setTestMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState<{role: string, content: string}[]>([]);
+  const [chatHistory, setChatHistory] = useState<{role: string, content: string, citation?: string, isHandoff?: boolean}[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [isLiveAgentMode, setIsLiveAgentMode] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -147,7 +148,8 @@ export default function BotManagementPage() {
         body: JSON.stringify({ botId, message: userMsg, sessionId: testSessionId })
       });
       const data = await res.json();
-      setChatHistory(prev => [...prev, { role: 'bot', content: data.answer || "Error getting response." }]);
+      setChatHistory(prev => [...prev, { role: 'bot', content: data.answer || "Error getting response.", citation: data.citation, isHandoff: data.isHandoff }]);
+      if (data.isHandoff) setIsLiveAgentMode(true);
     } catch (e) {
       setChatHistory(prev => [...prev, { role: 'bot', content: "Network error." }]);
     } finally {
@@ -471,10 +473,15 @@ export default function BotManagementPage() {
                 <div className="text-center text-gray-400 mt-20">Send a message to start testing</div>
               ) : (
                 chatHistory.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                     <div className={`px-4 py-2 rounded-2xl max-w-[80%] whitespace-pre-wrap ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-900 shadow-sm'}`}>
                       {msg.content}
                     </div>
+                    {msg.citation && (
+                      <a href={msg.citation} target="_blank" rel="noopener noreferrer" className="text-[10px] mt-1 text-gray-400 hover:text-blue-500 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200 flex items-center gap-1 transition-colors">
+                        <Link2 className="w-3 h-3" /> Source
+                      </a>
+                    )}
                   </div>
                 ))
               )}
@@ -486,18 +493,27 @@ export default function BotManagementPage() {
                 </div>
               )}
             </div>
-            <form onSubmit={handleTestChat} className="p-4 bg-white border-t border-gray-200 flex gap-2">
-              <input
-                type="text"
-                placeholder="Ask a question..."
-                value={testMessage}
-                onChange={(e) => setTestMessage(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
-                Send
-              </button>
-            </form>
+            
+            {isLiveAgentMode ? (
+              <div className="p-4 bg-amber-50 border-t border-amber-200 flex flex-col items-center justify-center text-amber-700">
+                <span className="font-bold flex items-center gap-2"><Globe className="w-4 h-4" /> Live Agent Handoff Triggered</span>
+                <p className="text-xs mt-1">The AI has paused. An email has been sent to the team.</p>
+                <button onClick={() => { setIsLiveAgentMode(false); setChatHistory([]); }} className="mt-3 text-xs bg-amber-200 hover:bg-amber-300 text-amber-800 px-3 py-1.5 rounded-md font-medium transition-colors">Restart Session</button>
+              </div>
+            ) : (
+              <form onSubmit={handleTestChat} className="p-4 bg-white border-t border-gray-200 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Ask a question..."
+                  value={testMessage}
+                  onChange={(e) => setTestMessage(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
+                  Send
+                </button>
+              </form>
+            )}
           </div>
         )}
 
