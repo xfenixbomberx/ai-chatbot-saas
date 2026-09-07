@@ -120,12 +120,15 @@ export async function POST(req: Request) {
     });
     const chunks = await splitter.createDocuments([allText]);
 
-    console.log(`[3/4] Generating Embeddings & Saving to DB (${chunks.length} chunks) in parallel batches...`);
-    // 3. Generate Embeddings & Save to DB in Parallel Batches
-    const BATCH_SIZE = 10;
+    console.log(`[3/4] Generating Embeddings via Gemini (${chunks.length} chunks)...`);
+    
+    // 3. Generate Embeddings & Save to DB (Optimized Bulk Insert)
+    const dbRecords: { bot_id: string; content: string; embedding: number[] }[] = [];
+    
+    // Process embeddings in larger parallel chunks, but don't hit the DB yet
+    const BATCH_SIZE = 20;
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
       const batch = chunks.slice(i, i + BATCH_SIZE);
-      
       await Promise.all(batch.map(async (chunk) => {
         try {
           const embeddingResponse = await ai.models.embedContent({
@@ -136,19 +139,25 @@ export async function POST(req: Request) {
           
           const embedding = embeddingResponse.embeddings?.[0]?.values;
           if (embedding) {
-            await supabase.from("bot_documents").insert({
+            dbRecords.push({
               bot_id: botId,
               content: chunk.pageContent,
               embedding: embedding,
             });
           }
         } catch (err) {
-          console.error("Failed to embed/save chunk:", err);
+          console.error("Failed to embed chunk:", err);
         }
       }));
     }
 
-    console.log(`[4/4] Training complete!`);
+    if (dbRecords.length > 0) {
+      console.log(`[4/4] Bulk inserting ${dbRecords.length} records to Supabase...`);
+      const { error } = await supabase.from("bot_documents").insert(dbRecords);
+      if (error) console.error("Bulk Insert Error:", error);
+    }
+
+    console.log(`Training complete!`);
     return NextResponse.json({ success: true, chunksProcessed: chunks.length, pagesScraped: urlsToScrape.length });
     
   } catch (error: any) {
