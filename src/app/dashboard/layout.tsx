@@ -14,7 +14,7 @@ export default function DashboardLayout({
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0">
         <div className="h-16 flex items-center px-6 border-b border-gray-200">
           <Bot className="w-6 h-6 text-blue-600 mr-2 shrink-0" />
-          <span className="text-md font-bold tracking-tight">AI Support Assistant</span>
+          <span className="text-md font-bold tracking-tight">ChatBot Config</span>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
           <Link

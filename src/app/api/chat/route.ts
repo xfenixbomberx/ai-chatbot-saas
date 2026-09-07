@@ -128,7 +128,7 @@ export async function POST(req: Request) {
           body: JSON.stringify({
             from: "AI Support <onboarding@resend.dev>",
             to: "jordanpotter41@gmail.com",
-            subject: "Human Handoff Alert - AI Support Assistant",
+            subject: "Human Handoff Alert - ChatBot Config",
             html: `<p>Your AI assistant couldn't answer the following question:</p><blockquote>${message}</blockquote><p>Session ID: ${sessionId}</p>`
           })
         }).catch(console.error);

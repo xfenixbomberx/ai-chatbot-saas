@@ -208,7 +208,7 @@ export default function DashboardPage() {
           </div>
           <h1 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">Select your plan</h1>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-            Get full access to the AI Support Assistant platform. Upgrade your customer support with 24/7 automated agents.
+            Get full access to the ChatBot Config platform. Upgrade your customer support with 24/7 automated agents.
           </p>
         </div>
 

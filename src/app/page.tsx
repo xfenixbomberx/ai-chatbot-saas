@@ -28,7 +28,7 @@ export default function Home() {
       >
         <div className="flex items-center gap-2">
           <Bot className="w-8 h-8 text-blue-600" />
-          <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">AI Support Assistant</span>
+          <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">ChatBot Config</span>
         </div>
         <div className="flex items-center gap-4">
           <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium">
@@ -243,9 +243,9 @@ export default function Home() {
           <div className="flex flex-col items-center md:items-start">
             <div className="flex items-center gap-2 mb-2">
               <Bot className="w-6 h-6 text-blue-500" />
-              <span className="text-lg font-bold text-white tracking-tight">AI Support Assistant</span>
+              <span className="text-lg font-bold text-white tracking-tight">ChatBot Config</span>
             </div>
-            <p className="text-sm">© {new Date().getFullYear()} AI Support Assistant. All rights reserved.</p>
+            <p className="text-sm">© {new Date().getFullYear()} ChatBot Config. All rights reserved.</p>
           </div>
           
           <div className="flex gap-6 text-sm">
