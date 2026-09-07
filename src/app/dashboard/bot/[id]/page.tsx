@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Globe, Loader2, Link2, Code, Mail, MessageSquare, FileText, Download, Settings, TrendingUp, Users, ShieldCheck, User } from "lucide-react";
+import { ArrowLeft, Globe, Loader2, Link2, Code, Mail, MessageSquare, FileText, Download, Settings, TrendingUp, Users, ShieldCheck, User, Save } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function BotManagementPage() {
