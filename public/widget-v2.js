@@ -217,11 +217,30 @@
     win.style.display = 'none';
   });
 
-  function addMessage(text, sender) {
+  function addMessage(text, sender, citation = null) {
+    const msgContainer = document.createElement('div');
+    msgContainer.style.display = 'flex';
+    msgContainer.style.flexDirection = 'column';
+    msgContainer.style.alignItems = sender === 'user' ? 'flex-end' : 'flex-start';
+
     const msg = document.createElement('div');
     msg.className = 'cb-msg ' + sender;
     msg.textContent = text;
-    messagesDiv.appendChild(msg);
+    msgContainer.appendChild(msg);
+
+    if (citation) {
+      const cit = document.createElement('a');
+      cit.href = citation;
+      cit.target = '_blank';
+      cit.style.fontSize = '10px';
+      cit.style.marginTop = '4px';
+      cit.style.color = '#9ca3af';
+      cit.style.textDecoration = 'none';
+      cit.innerHTML = '🔗 Source';
+      msgContainer.appendChild(cit);
+    }
+
+    messagesDiv.appendChild(msgContainer);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
 
@@ -265,7 +284,21 @@
       const data = await res.json();
       
       messagesDiv.removeChild(loadingMsg);
-      addMessage(data.answer || data.error, 'bot');
+      addMessage(data.answer || data.error, 'bot', data.citation);
+
+      if (data.isHandoff) {
+         const handoffDiv = document.createElement('div');
+         handoffDiv.style.padding = '12px';
+         handoffDiv.style.background = '#fffbeb';
+         handoffDiv.style.color = '#b45309';
+         handoffDiv.style.fontSize = '12px';
+         handoffDiv.style.textAlign = 'center';
+         handoffDiv.style.borderTop = '1px solid #fde68a';
+         handoffDiv.innerHTML = '<strong>Live Agent Handoff Triggered</strong><br>The AI has paused. Our team has been alerted.';
+         form.style.display = 'none';
+         document.getElementById('chatbot-widget-window').appendChild(handoffDiv);
+         return; // Stop asking for email
+      }
 
       // Lead capture trigger after first question
       if (!hasAskedForEmail) {
