@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout for the initial root page
+      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout for the initial root page
       const response = await fetch(websiteUrl, { ...fetchOptions, signal: controller.signal });
       clearTimeout(timeoutId);
       
@@ -87,7 +87,7 @@ export async function POST(req: Request) {
       });
 
       // Keep homepage + top 30 most valuable pages (to prevent server timeouts on massive stores)
-      urlsToScrape = Array.from(new Set([websiteUrl, ...uniqueLinks])).slice(0, 30);
+      urlsToScrape = Array.from(new Set([websiteUrl, ...uniqueLinks])).slice(0, 15);
     } catch(e) {
       console.warn("Failed to fetch initial page for links.");
       urlsToScrape = [websiteUrl]; // Fallback to just homepage if link extraction fails
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
     const pageContents = await Promise.all(urlsToScrape.map(async (url) => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout per page
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout per page
         
         const response = await fetch(url, { ...fetchOptions, signal: controller.signal });
         clearTimeout(timeoutId);
