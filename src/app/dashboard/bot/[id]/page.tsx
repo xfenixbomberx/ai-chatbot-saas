@@ -356,10 +356,14 @@ export default function BotManagementPage() {
                       onChange={(e) => setEditIcon(e.target.value)}
                       className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
                     >
-                      <option value="bot">Robot</option>
-                      <option value="message">Message Bubble</option>
-                      <option value="sparkles">Sparkles</option>
-                    </select>
+                        <option value="bot">Robot</option>
+                        <option value="message">Message Bubble</option>
+                        <option value="sparkles">Sparkles</option>
+                        <option value="support">Life Saver</option>
+                        <option value="chat">Double Chat</option>
+                        <option value="magic">Magic Wand</option>
+                        <option value="smile">Smiley Face</option>
+                      </select>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Brand Color</label>

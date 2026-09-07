@@ -33,13 +33,28 @@
 
   // 2. Determine which SVG icon to use
   let iconSvg = '';
-  if (botConfig.icon === 'message') {
-    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.03 2 11c0 2.87 1.54 5.43 3.91 7.12.35.25.59.63.66 1.05.12.72.01 1.78-.4 2.65a.5.5 0 0 0 .66.66c1.64-.78 2.94-1.32 3.86-1.55.33-.08.68-.08 1.01-.01A10.74 10.74 10.74 0 0 0 12 20c5.523 0 10-4.03 10-9s-4.477-9-10-9z"/></svg>`;
-  } else if (botConfig.icon === 'sparkles') {
-    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.67a2.12 2.12 0 0 0 1.155 1.156l4.67 2.31a.53.53 0 0 1 0 .95l-4.67 2.31a2.12 2.12 0 0 0-1.156 1.155l-2.31 4.67a.53.53 0 0 1-.95 0l-2.31-4.67a2.12 2.12 0 0 0-1.155-1.156l-4.67-2.31a.53.53 0 0 1 0-.95l4.67-2.31a2.12 2.12 0 0 0 1.156-1.155l2.31-4.67z"/><path d="M19.97 18.03a.35.35 0 0 1 .63 0l.69 1.39c.07.15.19.27.34.34l1.39.69a.35.35 0 0 1 0 .63l-1.39.69a.46.46 0 0 0-.34.34l-.69 1.39a.35.35 0 0 1-.63 0l-.69-1.39a.46.46 0 0 0-.34-.34l-1.39-.69a.35.35 0 0 1 0-.63l1.39-.69a.46.46 0 0 0 .34-.34l.69-1.39z"/></svg>`;
-  } else {
-    // Default modern robot icon
-    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 0 1 2 2v2h3a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-7a4 4 0 0 1 4-4h3V4a2 2 0 0 1 2-2zm3 10a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>`;
+  switch (botConfig.icon) {
+    case 'message':
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.03 2 11c0 2.87 1.54 5.43 3.91 7.12.35.25.59.63.66 1.05.12.72.01 1.78-.4 2.65a.5.5 0 0 0 .66.66c1.64-.78 2.94-1.32 3.86-1.55.33-.08.68-.08 1.01-.01A10.74 10.74 10.74 0 0 0 12 20c5.523 0 10-4.03 10-9s-4.477-9-10-9z"/></svg>`;
+      break;
+    case 'sparkles':
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.67a2.12 2.12 0 0 0 1.155 1.156l4.67 2.31a.53.53 0 0 1 0 .95l-4.67 2.31a2.12 2.12 0 0 0-1.156 1.155l-2.31 4.67a.53.53 0 0 1-.95 0l-2.31-4.67a2.12 2.12 0 0 0-1.155-1.156l-4.67-2.31a.53.53 0 0 1 0-.95l4.67-2.31a2.12 2.12 0 0 0 1.156-1.155l2.31-4.67z"/><path d="M19.97 18.03a.35.35 0 0 1 .63 0l.69 1.39c.07.15.19.27.34.34l1.39.69a.35.35 0 0 1 0 .63l-1.39.69a.46.46 0 0 0-.34.34l-.69 1.39a.35.35 0 0 1-.63 0l-.69-1.39a.46.46 0 0 0-.34-.34l-1.39-.69a.35.35 0 0 1 0-.63l1.39-.69a.46.46 0 0 0 .34-.34l.69-1.39z"/></svg>`;
+      break;
+    case 'support':
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-10 10v4a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H4a8 8 0 0 1 16 0h-2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-4a10 10 0 0 0-10-10z"/><path d="M8 22h8a2 2 0 0 0 2-2v-2H6v2a2 2 0 0 0 2 2z"/></svg>`;
+      break;
+    case 'chat':
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 10a4 4 0 1 1 8 0v2H8v-2zm12-4H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2v4l4-4h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/></svg>`;
+      break;
+    case 'magic':
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3.5 20.5l5.5-5.5-2.5-2.5-5.5 5.5c-.4.4-.4 1 0 1.4l1.1 1.1c.4.4 1 .4 1.4 0zm11.2-11.2l-2.5-2.5L19.5 2h2.5v2.5l-7.3 7.3z"/><path d="M15 5h2V3h1v2h2v1h-2v2h-1V6h-2V5zm-4 6h2V9h1v2h2v1h-2v2h-1v-2H11v-1zm-6 3h2v-2h1v2h2v1H8v2H7v-2H5v-1z"/></svg>`;
+      break;
+    case 'smile':
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-3 8.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm6 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm-3 8c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg>`;
+      break;
+    default:
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 0 1 2 2v2h3a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-7a4 4 0 0 1 4-4h3V4a2 2 0 0 1 2-2zm3 10a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>`;
+      break;
   }
 
   // 3. Inject CSS with Dynamic Brand Color
@@ -50,7 +65,17 @@
       bottom: 20px;
       right: 20px;
       z-index: 999999;
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    #chatbot-widget-button svg {
+      width: 28px !important;
+      height: 28px !important;
+      min-width: 28px !important;
+      min-height: 28px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      flex-shrink: 0;
+      display: block;
     }
     #chatbot-widget-button {
       width: 60px;
