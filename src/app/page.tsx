@@ -1,22 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, MessageSquare, Zap, Shield, ArrowRight, ChevronDown, Star } from "lucide-react";
+import { Bot, MessageSquare, Zap, Shield, ArrowRight, ChevronDown, Star, CheckCircle2, Globe, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 relative overflow-hidden">
+    <div className="min-h-screen bg-[#0A0A0A] font-sans text-slate-300 relative overflow-hidden selection:bg-indigo-500/30">
       
       {/* Background Tech Grid & Glow */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-400/20 rounded-full blur-[120px]"
-        ></motion.div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-blue-600/5 rounded-full blur-[150px]"></div>
       </div>
 
       {/* Navigation */}
@@ -24,19 +20,21 @@ export default function Home() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto"
+        className="relative z-10 flex items-center justify-between px-6 py-6 max-w-7xl mx-auto"
       >
-        <div className="flex items-center gap-2">
-          <Bot className="w-8 h-8 text-blue-600" />
-          <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">ChatBot Config</span>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Bot className="w-6 h-6 text-white" />
+          </div>
+          <span className="text-xl font-bold tracking-tight text-white">ChatBot Config</span>
         </div>
-        <div className="flex items-center gap-4">
-          <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium">
+        <div className="flex items-center gap-6">
+          <Link href="/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
             Log in
           </Link>
           <Link 
             href="/login" 
-            className="bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
+            className="text-sm font-medium bg-white hover:bg-slate-200 text-black px-5 py-2.5 rounded-full transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]"
           >
             Get Started
           </Link>
@@ -44,35 +42,38 @@ export default function Home() {
       </motion.nav>
 
       {/* Hero Section */}
-      <main className="relative z-10 max-w-7xl mx-auto px-8 pt-16 pb-20 md:pt-24 text-center">
+      <main className="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-32 text-center">
         
         {/* Pill Badge */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-semibold mb-8 shadow-sm"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-semibold mb-10 backdrop-blur-md"
         >
-          <span className="flex h-2 w-2 rounded-full bg-blue-600 animate-pulse"></span>
-          ✨ New: Train AI on your PDF documents
+          <Sparkles className="w-4 h-4" />
+          Enterprise features now available
         </motion.div>
 
         <motion.h1 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 mb-8 max-w-4xl mx-auto leading-tight"
+          className="text-5xl md:text-8xl font-black tracking-tighter text-white mb-8 max-w-5xl mx-auto leading-[1.1]"
         >
-          Turn your website into a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">24/7 AI Support Agent</span>
+          Automate your support. <br className="hidden md:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-blue-400 to-cyan-400">
+            Scale your business.
+          </span>
         </motion.h1>
         
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed"
+          className="text-xl md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed font-light"
         >
-          Instantly train a custom AI on your website's data. Embed a beautiful, branded chat widget in seconds and automate your customer support forever.
+          Instantly train a custom AI on your website's data. Embed a beautiful, intelligent chat widget in seconds and resolve customer queries 24/7.
         </motion.p>
         
         <motion.div 
@@ -83,176 +84,108 @@ export default function Home() {
         >
           <Link 
             href="/login" 
-            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-transform transform hover:scale-105 flex items-center justify-center shadow-xl shadow-blue-600/20"
+            className="w-full sm:w-auto bg-white hover:bg-slate-200 text-black px-8 py-4 rounded-full font-bold text-lg transition-transform transform hover:scale-105 flex items-center justify-center"
           >
             Start Building Now <ArrowRight className="w-5 h-5 ml-2" />
           </Link>
-        </motion.div>
-        
-        <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="mt-4 text-sm text-gray-500"
-        >
-          Starting at £49/month. Cancel anytime.
-        </motion.p>
-        
-        {/* Social Proof */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.7 }}
-          className="mt-10 flex flex-col items-center gap-2"
-        >
-          <div className="flex gap-1 text-yellow-400">
-            {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 fill-current" />)}
-          </div>
-          <p className="text-sm text-gray-500 font-medium">Trusted by 100+ forward-thinking businesses</p>
+          <a 
+            href="#features" 
+            className="w-full sm:w-auto bg-slate-800/50 hover:bg-slate-800 text-white border border-slate-700 backdrop-blur-md px-8 py-4 rounded-full font-bold text-lg transition-colors flex items-center justify-center"
+          >
+            Explore Features
+          </a>
         </motion.div>
 
         {/* Floating Mockup */}
         <motion.div 
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.8 }}
-          className="mt-16 w-full max-w-4xl mx-auto relative hidden md:block group"
+          transition={{ duration: 0.8, delay: 0.7 }}
+          className="mt-24 w-full max-w-5xl mx-auto relative hidden md:block"
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-500/20 to-transparent rounded-t-3xl blur-2xl transition-all duration-700 group-hover:bg-blue-500/30"></div>
-          <motion.div 
-            animate={{ y: [0, -10, 0] }}
-            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-            className="relative bg-white border border-gray-200 rounded-t-2xl shadow-2xl overflow-hidden flex flex-col"
-          >
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
-               <div className="flex items-center gap-3">
-                 <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                   <Bot className="text-white w-5 h-5"/>
-                 </div>
-                 <div className="flex flex-col items-start">
-                   <span className="font-bold text-white leading-tight">AI Support Agent</span>
-                   <span className="text-blue-100 text-xs flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online</span>
-                 </div>
-               </div>
-               <div className="flex gap-1.5">
-                 <div className="w-3 h-3 rounded-full bg-white/20"></div>
-                 <div className="w-3 h-3 rounded-full bg-white/20"></div>
-                 <div className="w-3 h-3 rounded-full bg-white/20"></div>
-               </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent z-10 top-1/2"></div>
+          <div className="relative rounded-2xl border border-white/10 bg-slate-900/50 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col ring-1 ring-white/5">
+            {/* Mockup Header */}
+            <div className="h-12 border-b border-white/10 flex items-center px-4 bg-slate-900/80 gap-2">
+              <div className="w-3 h-3 rounded-full bg-slate-700"></div>
+              <div className="w-3 h-3 rounded-full bg-slate-700"></div>
+              <div className="w-3 h-3 rounded-full bg-slate-700"></div>
+              <div className="mx-auto bg-slate-800 rounded-md px-4 py-1 text-xs text-slate-400 font-mono flex items-center gap-2">
+                <Globe className="w-3 h-3" /> chatbotconfig.uk
+              </div>
             </div>
-            <div className="p-8 bg-gray-50 flex flex-col gap-6 h-72 overflow-hidden relative">
-               <motion.div 
-                 initial={{ opacity: 0, x: -20 }}
-                 whileInView={{ opacity: 1, x: 0 }}
-                 transition={{ duration: 0.5, delay: 0.2 }}
-                 viewport={{ once: true }}
-                 className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-sm max-w-[80%] shadow-sm text-sm text-gray-700 text-left"
-               >
-                 Hi there! 👋 How can I help you scale your support today?
-               </motion.div>
-               <motion.div 
-                 initial={{ opacity: 0, x: 20 }}
-                 whileInView={{ opacity: 1, x: 0 }}
-                 transition={{ duration: 0.5, delay: 0.8 }}
-                 viewport={{ once: true }}
-                 className="bg-blue-600 text-white p-4 rounded-2xl rounded-tr-sm max-w-[75%] shadow-sm text-sm self-end text-left"
-               >
-                 Can you handle our customer emails too?
-               </motion.div>
-               <motion.div 
-                 initial={{ opacity: 0, x: -20 }}
-                 whileInView={{ opacity: 1, x: 0 }}
-                 transition={{ duration: 0.5, delay: 1.4 }}
-                 viewport={{ once: true }}
-                 className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-sm max-w-[85%] shadow-sm text-sm text-gray-700 text-left"
-               >
-                 Absolutely. I can capture leads and instantly hand off complex queries to your human team directly via email.
-               </motion.div>
-               <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none"></div>
+            {/* Mockup Body */}
+            <div className="flex">
+              <div className="w-64 border-r border-white/10 p-4 space-y-4 bg-slate-900/30">
+                <div className="h-8 bg-slate-800 rounded-lg w-full animate-pulse"></div>
+                <div className="h-8 bg-slate-800/50 rounded-lg w-3/4"></div>
+                <div className="h-8 bg-slate-800/50 rounded-lg w-5/6"></div>
+              </div>
+              <div className="flex-1 p-8 h-96 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-opacity-5">
+                <div className="max-w-md float-right bg-indigo-600 rounded-2xl rounded-tr-sm p-4 text-white text-sm shadow-lg mb-4">
+                  How does the new Zapier integration work?
+                </div>
+                <div className="clear-both"></div>
+                <div className="max-w-md float-left bg-slate-800 border border-white/5 rounded-2xl rounded-tl-sm p-4 text-slate-200 text-sm shadow-lg">
+                  It's simple! Just paste your webhook URL in the Settings tab, and we'll instantly fire a POST request with the customer's email whenever a lead is captured. <br/><br/>
+                  <span className="text-indigo-400 font-medium cursor-pointer">🔗 View Documentation</span>
+                </div>
+              </div>
             </div>
-          </motion.div>
-        </motion.div>
-        
-        {/* Scroll Arrow */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2, duration: 0.5 }}
-          className="mt-8 flex justify-center animate-bounce relative z-20"
-        >
-          <a href="#features" className="text-gray-400 hover:text-blue-600 transition-colors p-2" aria-label="Scroll down">
-            <ChevronDown className="w-8 h-8" />
-          </a>
+          </div>
         </motion.div>
       </main>
 
-      {/* Features Section */}
-      <section id="features" className="bg-white py-24 border-t border-gray-200 scroll-mt-10">
-        <div className="max-w-7xl mx-auto px-8">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything you need to scale your support</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">Stop answering the same questions manually. Let our intelligent AI agents handle your customers instantly.</p>
-          </motion.div>
+      {/* Features Grid (Bento) */}
+      <section id="features" className="py-32 relative z-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-6 tracking-tight">Everything you need to succeed.</h2>
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto">Enterprise-grade infrastructure packed into a beautifully simple dashboard.</p>
+          </div>
 
-          <div className="grid md:grid-cols-3 gap-12">
-            {[
-              {
-                icon: <Zap className="w-8 h-8 text-blue-600" />,
-                title: "Instant Training",
-                desc: "Just paste your website URL. Our system scrapes your content and trains a custom AI model in seconds."
-              },
-              {
-                icon: <MessageSquare className="w-8 h-8 text-blue-600" />,
-                title: "Custom Branding",
-                desc: "Match the widget to your company. Pick your brand colors, custom bot name, and custom icons to fit your style."
-              },
-              {
-                icon: <Shield className="w-8 h-8 text-blue-600" />,
-                title: "Secure & Reliable",
-                desc: "Powered by the latest Google Gemini AI models and Supabase vector databases for ultra-fast, accurate responses."
-              }
-            ].map((feat, idx) => (
-              <motion.div 
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.2 }}
-                viewport={{ once: true }}
-                className="text-center"
-              >
-                <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-transform hover:scale-110">
-                  {feat.icon}
-                </div>
-                <h3 className="text-xl font-bold mb-3">{feat.title}</h3>
-                <p className="text-gray-600">{feat.desc}</p>
-              </motion.div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Feature 1 */}
+            <div className="md:col-span-2 bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 p-10 rounded-3xl relative overflow-hidden group hover:border-indigo-500/30 transition-colors">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-colors"></div>
+              <Zap className="w-10 h-10 text-indigo-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-3">Instant Training</h3>
+              <p className="text-slate-400 text-lg max-w-md">Just enter your website URL. Our system recursively scrapes your pages and trains an intelligent vector database in seconds.</p>
+            </div>
+            
+            {/* Feature 2 */}
+            <div className="bg-gradient-to-bl from-slate-900 to-slate-950 border border-white/10 p-10 rounded-3xl relative overflow-hidden group hover:border-blue-500/30 transition-colors">
+              <Shield className="w-10 h-10 text-blue-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-3">Zero Hallucinations</h3>
+              <p className="text-slate-400 text-lg">Bots strictly answer using your data and provide clickable source citations.</p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="bg-gradient-to-tr from-slate-900 to-slate-950 border border-white/10 p-10 rounded-3xl relative overflow-hidden group hover:border-cyan-500/30 transition-colors">
+              <MessageSquare className="w-10 h-10 text-cyan-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-3">Live Agent Handoff</h3>
+              <p className="text-slate-400 text-lg">If the bot gets stuck, it pauses and instantly emails your human team to take over.</p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="md:col-span-2 bg-gradient-to-tl from-slate-900 to-slate-950 border border-white/10 p-10 rounded-3xl relative overflow-hidden group hover:border-purple-500/30 transition-colors">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-colors"></div>
+              <Bot className="w-10 h-10 text-purple-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-3">Custom Integrations</h3>
+              <p className="text-slate-400 text-lg max-w-md">Connect directly to Zapier, Make, and HubSpot using our Enterprise webhooks. Completely remove our branding for a native feel.</p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12 border-t border-gray-800">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex flex-col items-center md:items-start">
-            <div className="flex items-center gap-2 mb-2">
-              <Bot className="w-6 h-6 text-blue-500" />
-              <span className="text-lg font-bold text-white tracking-tight">ChatBot Config</span>
-            </div>
-            <p className="text-sm">© {new Date().getFullYear()} ChatBot Config. All rights reserved.</p>
+      <footer className="border-t border-white/10 bg-[#0A0A0A] py-12 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-3">
+            <Bot className="w-6 h-6 text-indigo-500" />
+            <span className="text-lg font-bold text-white tracking-tight">ChatBot Config</span>
           </div>
-          
-          <div className="flex gap-6 text-sm">
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-            <a href="mailto:support@chatbotconfig.uk" className="hover:text-white transition-colors">Contact Support</a>
-          </div>
+          <p className="text-sm text-slate-500">© {new Date().getFullYear()} ChatBot Config. All rights reserved.</p>
         </div>
       </footer>
     </div>
