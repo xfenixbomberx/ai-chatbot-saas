@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, MessageCircle, Send, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, MessageCircle, Send, Loader2, CheckCircle2, BookOpen, ArrowUpRight } from "lucide-react";
+
+const HANDBOOK_URL = "https://claude.ai/code/artifact/afadebf2-9f2c-4352-a565-41f9108027fb";
 
 const HELP = [
   {
@@ -65,7 +67,33 @@ export default function SupportPage() {
           </p>
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_300px]">
+        {/* Handbook banner */}
+        <a
+          href={HANDBOOK_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-8 flex items-center justify-between gap-6 rounded-2xl border border-line bg-white p-6 shadow-[var(--shadow-xs)] transition-colors hover:border-accent/30"
+        >
+          <div className="flex items-center gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+              <BookOpen className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-[15px] font-semibold text-ink-strong">
+                Read the ChatBot Config Handbook
+              </h2>
+              <p className="mt-0.5 text-sm text-ink-muted">
+                A full walkthrough — from creating your first chatbot to embedding it on your site.
+              </p>
+            </div>
+          </div>
+          <span className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line-strong bg-white px-3.5 py-2 text-sm font-semibold text-ink-strong">
+            Open guide
+            <ArrowUpRight className="h-4 w-4" />
+          </span>
+        </a>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_300px]">
           {/* Form */}
           <section className="overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-xs)]">
             {status === "success" ? (
