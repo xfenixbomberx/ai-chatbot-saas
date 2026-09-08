@@ -1,29 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
-export async function POST(req: Request) {
-  try {
-    const { userId } = await req.json();
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    // Using the service role key or anon key (if RLS is off)
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    
-    // For MVP prototyping: We trust the success callback.
-    // NOTE FOR PRODUCTION: You should use actual Stripe Webhooks to verify the payment signature securely!
-    const { error } = await supabase
-      .from("profiles")
-      .update({ is_subscribed: true })
-      .eq("id", userId);
-
-    if (error) {
-      console.error("Error updating profile:", error);
-      throw error;
-    }
-    
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+// Superseded by src/app/api/stripe/webhook/route.ts, which verifies
+// Stripe's signature before updating subscription state. This route used
+// to trust a client-supplied userId to flip is_subscribed -- anyone who
+// knew another user's id could call it directly and grant themselves a
+// paid plan. Kept as a no-op so old/cached client bundles calling it don't
+// hard-crash; the dashboard's ?success=true handler no longer calls this.
+export async function POST() {
+  return NextResponse.json(
+    { success: true, note: "Subscription state is now updated via Stripe webhook." },
+    { status: 200 }
+  );
 }

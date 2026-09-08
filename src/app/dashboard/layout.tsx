@@ -10,18 +10,22 @@ import {
   Menu,
   X,
   ExternalLink,
+  Users,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/client";
+import { OrgProvider } from "@/lib/org-context";
+import OrgSwitcher from "@/components/OrgSwitcher";
 
 const NAV = [
   { href: "/dashboard", label: "My bots", icon: LayoutDashboard, exact: true },
+  { href: "/dashboard/org", label: "Team", icon: Users },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
   { href: "/dashboard/support", label: "Help & support", icon: LifeBuoy },
 ];
 
-export default function DashboardLayout({
+function DashboardShell({
   children,
 }: {
   children: React.ReactNode;
@@ -66,6 +70,10 @@ export default function DashboardLayout({
         >
           <X className="h-5 w-5" />
         </button>
+      </div>
+
+      <div className="border-b border-line p-3">
+        <OrgSwitcher />
       </div>
 
       <nav className="flex-1 space-y-1 p-3">
@@ -156,5 +164,13 @@ export default function DashboardLayout({
         <main className="ds-scrollbar flex-1 overflow-auto">{children}</main>
       </div>
     </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <OrgProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </OrgProvider>
   );
 }

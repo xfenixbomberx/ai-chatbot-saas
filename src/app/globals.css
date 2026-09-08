@@ -105,10 +105,16 @@ body {
   color: var(--ink-strong);
 }
 
-/* Headings default to tight, dark, optically balanced */
-h1, h2, h3, h4 {
-  color: var(--ink-strong);
-  letter-spacing: -0.02em;
+/* Headings default to tight, dark, optically balanced.
+   Wrapped in @layer base so utility classes (e.g. text-white on a dark
+   panel) can still override it -- Tailwind v4's cascade layers make
+   unlayered rules win over layered ones regardless of specificity, so an
+   unlayered `h2 { color }` was beating `.text-white` on every heading. */
+@layer base {
+  h1, h2, h3, h4 {
+    color: var(--ink-strong);
+    letter-spacing: -0.02em;
+  }
 }
 
 /* ---------- Reusable primitives ---------- */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/client";
 import { Bot, Loader2, ArrowLeft, Check, Shield, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -36,7 +36,10 @@ export default function LoginPage() {
         setIsError(true);
         setMessage(error.message);
       } else {
-        router.push("/dashboard");
+        // Honour a `next` param (e.g. set by middleware when redirecting
+        // from an org invite link) instead of always landing on /dashboard.
+        const next = new URLSearchParams(window.location.search).get("next");
+        router.push(next && next.startsWith("/dashboard") ? next : "/dashboard");
       }
     }
     setIsLoading(false);

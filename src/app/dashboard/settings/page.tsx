@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/client";
 import {
   User,
   CreditCard,
@@ -11,20 +11,24 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { useOrg } from "@/lib/org-context";
 
 export default function SettingsPage() {
+  const { currentOrg, isLoading: isOrgLoading } = useOrg();
   const [user, setUser] = useState<any>(null);
-  const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isBillingLoading, setIsBillingLoading] = useState(false);
 
+  const isSubscribed = currentOrg?.plan_status === "active";
+
   const handleManageBilling = async () => {
+    if (!currentOrg) return;
     setIsBillingLoading(true);
     try {
       const response = await fetch("/api/portal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, email: user.email }),
+        body: JSON.stringify({ orgId: currentOrg.id, email: user.email }),
       });
       const data = await response.json();
       if (data.url) {
@@ -40,25 +44,13 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    const fetchUserAndProfile = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session) {
-        setUser(session.user);
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("is_subscribed")
-          .eq("id", session.user.id)
-          .single();
-        if (profile) setIsSubscribed(profile.is_subscribed);
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setUser(session.user);
       setIsLoading(false);
-    };
-    fetchUserAndProfile();
+    });
   }, []);
 
-  if (isLoading) {
+  if (isLoading || isOrgLoading) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="flex items-center gap-3 text-sm text-ink-muted">
@@ -104,71 +96,73 @@ export default function SettingsPage() {
           </section>
 
           {/* Billing */}
-          <section className="overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-xs)]">
-            <header className="flex items-center gap-2.5 border-b border-line bg-surface-muted px-6 py-4">
-              <CreditCard className="h-[18px] w-[18px] text-ink-muted" />
-              <h2 className="text-[15px] font-semibold text-ink-strong">
-                Subscription &amp; billing
-              </h2>
-            </header>
+          {currentOrg && (
+            <section className="overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-xs)]">
+              <header className="flex items-center gap-2.5 border-b border-line bg-surface-muted px-6 py-4">
+                <CreditCard className="h-[18px] w-[18px] text-ink-muted" />
+                <h2 className="text-[15px] font-semibold text-ink-strong">
+                  Subscription &amp; billing — {currentOrg.name}
+                </h2>
+              </header>
 
-            <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-ink-muted">
-                    Current plan
-                  </span>
-                  {isSubscribed ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-positive-soft px-2.5 py-1 text-[13px] font-semibold text-positive">
-                      <ShieldCheck className="h-3.5 w-3.5" />
-                      Active
+              <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-ink-muted">
+                      Current plan
                     </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-sunken px-2.5 py-1 text-[13px] font-semibold text-ink-muted">
-                      <AlertCircle className="h-3.5 w-3.5" />
-                      Inactive
-                    </span>
-                  )}
+                    {isSubscribed ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-positive-soft px-2.5 py-1 text-[13px] font-semibold text-positive">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Active · {currentOrg.plan_tier}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-sunken px-2.5 py-1 text-[13px] font-semibold text-ink-muted">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        Inactive
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-ink-muted">
+                    {isSubscribed
+                      ? "You have full access to chatbot creation, training and the embeddable widget."
+                      : "Choose a plan to unlock chatbot creation and training."}
+                  </p>
                 </div>
-                <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-ink-muted">
-                  {isSubscribed
-                    ? "You have full access to chatbot creation, training and the embeddable widget."
-                    : "Choose a plan to unlock chatbot creation and training."}
-                </p>
+
+                {isSubscribed ? (
+                  <button
+                    onClick={handleManageBilling}
+                    disabled={isBillingLoading}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-line-strong bg-white px-4 py-2.5 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-60"
+                  >
+                    {isBillingLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        Manage billing
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex shrink-0 items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover"
+                  >
+                    Choose a plan
+                  </Link>
+                )}
               </div>
 
-              {isSubscribed ? (
-                <button
-                  onClick={handleManageBilling}
-                  disabled={isBillingLoading}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-line-strong bg-white px-4 py-2.5 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-60"
-                >
-                  {isBillingLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      Manage billing
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </>
-                  )}
-                </button>
-              ) : (
-                <Link
-                  href="/dashboard"
-                  className="inline-flex shrink-0 items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover"
-                >
-                  Choose a plan
-                </Link>
-              )}
-            </div>
-
-            <div className="border-t border-line bg-surface-muted px-6 py-3.5">
-              <p className="text-[13px] text-ink-faint">
-                Payments and invoices are handled securely by Stripe. Cancel or
-                change plan at any time from the billing portal.
-              </p>
-            </div>
-          </section>
+              <div className="border-t border-line bg-surface-muted px-6 py-3.5">
+                <p className="text-[13px] text-ink-faint">
+                  Payments and invoices are handled securely by Stripe. Cancel or
+                  change plan at any time from the billing portal.
+                </p>
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </div>

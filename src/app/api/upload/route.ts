@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { GoogleGenAI } from "@google/genai";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { createServiceRoleClient } from "@/lib/supabase/server";
+import { requireUser, requireBotOrgAccess, AuthError } from "@/lib/auth";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -19,6 +15,14 @@ export async function POST(req: Request) {
     if (!botId || !file) {
       return NextResponse.json({ error: "Missing botId or file" }, { status: 400 });
     }
+
+    const user = await requireUser();
+    // Editor role or above can upload training documents -- viewers are read-only.
+    await requireBotOrgAccess(user.id, botId, "editor");
+
+    // Created lazily so a missing SUPABASE_SERVICE_ROLE_KEY fails a
+    // request, not the production build.
+    const supabase = createServiceRoleClient();
 
     const supportedTypes = ["application/pdf", "text/plain", "image/png", "image/jpeg", "image/jpg", "image/webp"];
     if (!supportedTypes.includes(file.type)) {
@@ -147,6 +151,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, chunksProcessed: chunks.length });
     
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("PDF Upload error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -1,27 +1,25 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { createServiceRoleClient } from "@/lib/supabase/server";
+import { corsHeaders, corsOptionsResponse } from "@/lib/cors";
 
 export const dynamic = 'force-dynamic';
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
-
 export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+  return corsOptionsResponse();
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: botId } = await params;
-    
+
+    // Public, unauthenticated endpoint -- the bot's UUID is its de facto
+    // public "site key" (embedded in every customer's page source), so this
+    // intentionally serves without a user session. Runs as the service role
+    // since RLS now requires auth.uid() = user_id, which anonymous requests
+    // never satisfy. Created lazily (not at module scope) so a missing
+    // SUPABASE_SERVICE_ROLE_KEY fails a request, not the production build.
+    const supabase = createServiceRoleClient();
+
     // Fetch the specific bot from Supabase
     const { data: bot, error } = await supabase
       .from("chatbots")

@@ -1,19 +1,24 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServiceRoleClient } from "@/lib/supabase/server";
+import { corsHeaders, corsOptionsResponse } from "@/lib/cors";
 
-// We use the service role key here to insert leads bypassing RLS if needed,
-// but anon key is fine since RLS is disabled in MVP.
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export async function OPTIONS() {
+  return corsOptionsResponse();
+}
 
 export async function POST(req: Request) {
   try {
+    // Public endpoint called cross-origin from the widget -- RLS is now on,
+    // so this needs the real service-role key (the old anon-key fallback
+    // assumed RLS was off and would otherwise silently insert nothing).
+    // Created lazily so a missing SUPABASE_SERVICE_ROLE_KEY fails a
+    // request, not the production build.
+    const supabase = createServiceRoleClient();
+
     const { botId, email } = await req.json();
 
     if (!botId || !email) {
-      return NextResponse.json({ error: "Missing botId or email" }, { status: 400 });
+      return NextResponse.json({ error: "Missing botId or email" }, { status: 400, headers: corsHeaders });
     }
 
     const { data, error } = await supabase
@@ -41,9 +46,9 @@ export async function POST(req: Request) {
       }
     } catch(e) {}
 
-    return NextResponse.json({ success: true, lead: data });
+    return NextResponse.json({ success: true, lead: data }, { headers: corsHeaders });
   } catch (error: any) {
     console.error("Error capturing lead:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
   }
 }

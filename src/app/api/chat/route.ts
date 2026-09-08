@@ -1,24 +1,22 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
-import { createClient } from "@supabase/supabase-js";
+import { createServiceRoleClient } from "@/lib/supabase/server";
+import { corsHeaders, corsOptionsResponse } from "@/lib/cors";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
-
 export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+  return corsOptionsResponse();
 }
 
 export async function POST(req: Request) {
   try {
+    // Public, unauthenticated endpoint (called by the embedded widget from
+    // customer sites) -- always runs as the service role since there's no
+    // user session to check RLS ownership against. Created lazily so a
+    // missing SUPABASE_SERVICE_ROLE_KEY fails a request, not the build.
+    const supabase = createServiceRoleClient();
+
     const { botId, message, sessionId } = await req.json();
 
     // Log the user message asynchronously

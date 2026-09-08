@@ -2,14 +2,10 @@ import { NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { GoogleGenAI } from "@google/genai";
-import { createClient } from "@supabase/supabase-js";
+import { createServiceRoleClient } from "@/lib/supabase/server";
+import { requireUser, requireBotOrgAccess, AuthError } from "@/lib/auth";
 
 export const maxDuration = 60;
-
-// Setup Supabase
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Initialize Gemini SDK
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -21,6 +17,17 @@ export async function POST(req: Request) {
     if (!botId || !websiteUrl) {
       return NextResponse.json({ error: "Missing botId or websiteUrl" }, { status: 400 });
     }
+
+    const user = await requireUser();
+    // Editor role or above can trigger retraining -- viewers are read-only.
+    await requireBotOrgAccess(user.id, botId, "editor");
+
+    // Writes bypass RLS via the service-role key -- requireBotOrgAccess
+    // above is what actually protects this route, since botId alone used
+    // to be enough (it's public, embedded in every customer's page
+    // source). Created lazily so a missing SUPABASE_SERVICE_ROLE_KEY fails
+    // a request, not the production build.
+    const supabase = createServiceRoleClient();
 
     console.log(`[1/4] Starting Deep Scrape for: ${websiteUrl}...`);
     
@@ -196,6 +203,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, chunksProcessed: chunks.length, pagesScraped: urlsToScrape.length });
     
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Training error:", error);
     return NextResponse.json({ error: error.message || "An error occurred during training." }, { status: 500 });
   }

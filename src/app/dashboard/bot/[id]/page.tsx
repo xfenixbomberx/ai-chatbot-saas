@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/client";
 import {
   ArrowLeft,
   Globe,
@@ -103,10 +103,18 @@ export default function BotManagementPage() {
   const [isSavingPrompt, setIsSavingPrompt] = useState(false);
   const [promptStatus, setPromptStatus] = useState("");
 
-  // Data
+  // Data (paginated -- these tabs used to fetch entire tables unbounded)
+  const LEADS_PAGE_SIZE = 50;
+  const MESSAGES_PAGE_SIZE = 200;
   const [leads, setLeads] = useState<any[]>([]);
+  const [leadsTotalCount, setLeadsTotalCount] = useState(0);
+  const [leadsHasMore, setLeadsHasMore] = useState(false);
+  const [isLoadingMoreLeads, setIsLoadingMoreLeads] = useState(false);
   const [chatSessions, setChatSessions] = useState<Record<string, any[]>>({});
+  const [messagesHasMore, setMessagesHasMore] = useState(false);
+  const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState(false);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Tester
   const [testMessage, setTestMessage] = useState("");
@@ -150,47 +158,125 @@ export default function BotManagementPage() {
     }
 
     if (activeTab === "leads" || activeTab === "inbox") {
-      const { data: leadsData } = await supabase
+      // Bounded first page instead of the entire table -- these tabs used to
+      // fetch every row unconditionally, which grows unbounded with usage.
+      const { data: leadsData, count: leadsCount } = await supabase
         .from("leads")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("bot_id", botId)
-        .order("captured_at", { ascending: false });
-      if (leadsData) setLeads(leadsData);
+        .order("captured_at", { ascending: false })
+        .range(0, LEADS_PAGE_SIZE - 1);
+      if (leadsData) {
+        setLeads(leadsData);
+        setLeadsTotalCount(leadsCount ?? leadsData.length);
+        setLeadsHasMore((leadsCount ?? 0) > leadsData.length);
+      }
 
-      const { data: msgsData } = await supabase
+      // Most recent page, newest first, then reversed so sessions render
+      // chronologically -- same effect as the old ascending-order fetch for
+      // the common case (a session's messages fit within one page).
+      const { data: msgsDesc, count: msgsCount } = await supabase
         .from("chat_messages")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("bot_id", botId)
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false })
+        .range(0, MESSAGES_PAGE_SIZE - 1);
 
-      if (msgsData) {
-        const grouped: Record<string, any[]> = {};
-        msgsData.forEach((msg) => {
-          if (!grouped[msg.session_id]) grouped[msg.session_id] = [];
-          grouped[msg.session_id].push(msg);
-        });
-        setChatSessions(grouped);
-
-        const last7Days = [...Array(7)]
-          .map((_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            return d.toISOString().split("T")[0];
-          })
-          .reverse();
-
-        const chartAgg = last7Days.map((date) => {
-          const msgsOnDate = msgsData.filter((m) =>
-            m.created_at.startsWith(date)
-          ).length;
-          const leadsOnDate = (leadsData || []).filter((l) =>
-            (l.captured_at || "").startsWith(date)
-          ).length;
-          return { name: date.slice(5), Messages: msgsOnDate, Leads: leadsOnDate };
-        });
-        setChartData(chartAgg);
+      if (msgsDesc) {
+        const msgsData = [...msgsDesc].reverse();
+        setMessagesHasMore((msgsCount ?? 0) > msgsDesc.length);
+        groupMessagesIntoSessions(msgsData);
+        computeChartData(msgsData, leadsData || []);
       }
     }
+  };
+
+  const groupMessagesIntoSessions = (msgsData: any[]) => {
+    const grouped: Record<string, any[]> = {};
+    msgsData.forEach((msg) => {
+      if (!grouped[msg.session_id]) grouped[msg.session_id] = [];
+      grouped[msg.session_id].push(msg);
+    });
+    setChatSessions(grouped);
+  };
+
+  const computeChartData = (msgsData: any[], leadsData: any[]) => {
+    const last7Days = [...Array(7)]
+      .map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        return d.toISOString().split("T")[0];
+      })
+      .reverse();
+
+    const chartAgg = last7Days.map((date) => {
+      const msgsOnDate = msgsData.filter((m) => m.created_at.startsWith(date)).length;
+      const leadsOnDate = leadsData.filter((l) => (l.captured_at || "").startsWith(date)).length;
+      return { name: date.slice(5), Messages: msgsOnDate, Leads: leadsOnDate };
+    });
+    setChartData(chartAgg);
+  };
+
+  const loadMoreLeads = async () => {
+    setIsLoadingMoreLeads(true);
+    const { data, count } = await supabase
+      .from("leads")
+      .select("*", { count: "exact" })
+      .eq("bot_id", botId)
+      .order("captured_at", { ascending: false })
+      .range(leads.length, leads.length + LEADS_PAGE_SIZE - 1);
+
+    if (data) {
+      const merged = [...leads, ...data];
+      setLeads(merged);
+      setLeadsTotalCount(count ?? merged.length);
+      setLeadsHasMore((count ?? 0) > merged.length);
+    }
+    setIsLoadingMoreLeads(false);
+  };
+
+  const loadMoreMessages = async () => {
+    setIsLoadingMoreMessages(true);
+    const alreadyLoaded = Object.values(chatSessions).reduce((n, m) => n + m.length, 0);
+
+    // Next page going further back in time -- still newest-first, then
+    // reversed and prepended so the merged set stays chronological.
+    const { data, count } = await supabase
+      .from("chat_messages")
+      .select("*", { count: "exact" })
+      .eq("bot_id", botId)
+      .order("created_at", { ascending: false })
+      .range(alreadyLoaded, alreadyLoaded + MESSAGES_PAGE_SIZE - 1);
+
+    if (data) {
+      const currentAll = Object.values(chatSessions).flat();
+      const merged = [...data.reverse(), ...currentAll];
+      setMessagesHasMore((count ?? 0) > alreadyLoaded + data.length);
+      groupMessagesIntoSessions(merged);
+    }
+    setIsLoadingMoreMessages(false);
+  };
+
+  // Exports pull the complete dataset directly, independent of whatever
+  // page is currently on screen -- leads/messages are business records
+  // people rely on the export being complete.
+  const fetchAllRows = async (table: "leads" | "chat_messages", orderCol: string) => {
+    const rows: any[] = [];
+    const BATCH = 1000;
+    let offset = 0;
+    while (true) {
+      const { data } = await supabase
+        .from(table)
+        .select("*")
+        .eq("bot_id", botId)
+        .order(orderCol, { ascending: true })
+        .range(offset, offset + BATCH - 1);
+      if (!data || data.length === 0) break;
+      rows.push(...data);
+      if (data.length < BATCH) break;
+      offset += BATCH;
+    }
+    return rows;
   };
 
   const handleTrain = async (e: React.FormEvent) => {
@@ -329,19 +415,25 @@ export default function BotManagementPage() {
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (leads.length === 0) return;
-    const header = "Email,Date Captured\n";
-    const csv = leads
-      .map((l) => `${l.email},${new Date(l.captured_at).toISOString()}`)
-      .join("\n");
-    const blob = new Blob([header + csv], { type: "text/csv" });
-    const objectUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = objectUrl;
-    a.download = `leads-${botId}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(objectUrl);
+    setIsExporting(true);
+    try {
+      const allLeads = await fetchAllRows("leads", "captured_at");
+      const header = "Email,Date Captured\n";
+      const csv = allLeads
+        .map((l) => `${l.email},${new Date(l.captured_at).toISOString()}`)
+        .join("\n");
+      const blob = new Blob([header + csv], { type: "text/csv" });
+      const objectUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `leads-${botId}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(objectUrl);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleUpdateBot = async () => {
@@ -793,7 +885,7 @@ export default function BotManagementPage() {
                 />
                 <Stat
                   label="Leads captured"
-                  value={leads.length}
+                  value={leadsTotalCount}
                   icon={<Users className="h-[18px] w-[18px]" />}
                 />
                 <Stat
@@ -867,26 +959,34 @@ export default function BotManagementPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => {
-                      const csvContent =
-                        "data:text/csv;charset=utf-8,Session ID,Role,Message\n" +
-                        Object.entries(chatSessions)
-                          .flatMap(([sId, msgs]) =>
-                            msgs.map(
-                              (m) => `${sId},${m.role},"${m.content.replace(/"/g, '""')}"`
+                    onClick={async () => {
+                      setIsExporting(true);
+                      try {
+                        const allMsgs = await fetchAllRows("chat_messages", "created_at");
+                        const csvContent =
+                          "data:text/csv;charset=utf-8,Session ID,Role,Message\n" +
+                          allMsgs
+                            .map(
+                              (m) => `${m.session_id},${m.role},"${m.content.replace(/"/g, '""')}"`
                             )
-                          )
-                          .join("\n");
-                      const link = document.createElement("a");
-                      link.setAttribute("href", encodeURI(csvContent));
-                      link.setAttribute("download", `chat_logs_${botId}.csv`);
-                      document.body.appendChild(link);
-                      link.click();
+                            .join("\n");
+                        const link = document.createElement("a");
+                        link.setAttribute("href", encodeURI(csvContent));
+                        link.setAttribute("download", `chat_logs_${botId}.csv`);
+                        document.body.appendChild(link);
+                        link.click();
+                      } finally {
+                        setIsExporting(false);
+                      }
                     }}
-                    disabled={sessionCount === 0}
+                    disabled={sessionCount === 0 || isExporting}
                     className="inline-flex items-center gap-2 rounded-lg border border-line-strong bg-white px-4 py-2 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-50"
                   >
-                    <Download className="h-4 w-4" />
+                    {isExporting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
                     Export logs
                   </button>
                 </div>
@@ -936,6 +1036,19 @@ export default function BotManagementPage() {
                     ))}
                   </div>
                 )}
+
+                {messagesHasMore && (
+                  <div className="border-t border-line p-4 text-center">
+                    <button
+                      onClick={loadMoreMessages}
+                      disabled={isLoadingMoreMessages}
+                      className="inline-flex items-center gap-2 rounded-lg border border-line-strong bg-white px-4 py-2 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-50"
+                    >
+                      {isLoadingMoreMessages && <Loader2 className="h-4 w-4 animate-spin" />}
+                      Load more
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -954,14 +1067,18 @@ export default function BotManagementPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="rounded-full bg-accent-soft px-3 py-1 text-[13px] font-semibold text-accent-ink">
-                    {leads.length} total
+                    {leadsTotalCount} total
                   </span>
                   <button
                     onClick={handleExportCSV}
-                    disabled={leads.length === 0}
+                    disabled={leads.length === 0 || isExporting}
                     className="inline-flex items-center gap-2 rounded-lg border border-line-strong bg-white px-4 py-2 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-50"
                   >
-                    <Download className="h-4 w-4" />
+                    {isExporting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
                     Export CSV
                   </button>
                 </div>
@@ -1026,6 +1143,18 @@ export default function BotManagementPage() {
                       })}
                     </tbody>
                   </table>
+                  {leadsHasMore && (
+                    <div className="border-t border-line p-4 text-center">
+                      <button
+                        onClick={loadMoreLeads}
+                        disabled={isLoadingMoreLeads}
+                        className="inline-flex items-center gap-2 rounded-lg border border-line-strong bg-white px-4 py-2 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-50"
+                      >
+                        {isLoadingMoreLeads && <Loader2 className="h-4 w-4 animate-spin" />}
+                        Load more
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

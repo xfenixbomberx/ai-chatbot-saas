@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/client";
 import {
   Plus,
   Bot,
@@ -13,17 +13,21 @@ import {
   RefreshCw,
   Loader2,
   ArrowRight,
+  Building2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useOrg } from "@/lib/org-context";
 
+// Live-looking Stripe price IDs used to be hardcoded here as fallbacks --
+// removed since they shouldn't ship in client source regardless of the
+// server-side allowlist in api/checkout. Set the env vars in .env.local.
 const PLANS = [
   {
     name: "Starter",
     price: "£49",
     tagline: "One site, covered after hours.",
-    env: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER,
-    fallback: "price_1UCk2WLuviuLNWsXWEayNFDA",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER,
     features: ["1 AI chatbot", "Website crawling & training", "Lead capture", "Standard analytics"],
     featured: false,
   },
@@ -31,8 +35,7 @@ const PLANS = [
     name: "Pro",
     price: "£99",
     tagline: "For teams running a few properties.",
-    env: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO,
-    fallback: "price_1UCk3aLuviuLNWsXFQApelRq",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO,
     features: [
       "3 AI chatbots",
       "Unlimited retraining",
@@ -46,8 +49,7 @@ const PLANS = [
     name: "Enterprise",
     price: "£299",
     tagline: "Agencies and multi-brand rollouts.",
-    env: process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE,
-    fallback: "price_1UCk4hLuviuLNWsX44ndHMEj",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE,
     features: [
       "10 AI chatbots",
       'White-label — no "powered by"',
@@ -61,6 +63,7 @@ const PLANS = [
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { currentOrg, orgs, isLoading: isOrgLoading, refetch: refetchOrgs } = useOrg();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [botName, setBotName] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -73,70 +76,86 @@ export default function DashboardPage() {
   const [isFetching, setIsFetching] = useState(true);
   const [user, setUser] = useState<any>(null);
 
-  const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
 
   useEffect(() => {
-    const init = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         window.location.href = "/login";
         return;
       }
       setUser(session.user);
+    });
+  }, []);
 
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get("success") === "true") {
-        await fetch("/api/success", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: session.user.id }),
-        });
-        router.replace("/dashboard");
-        setIsSubscribed(true);
-        fetchBots(session.user.id);
-        return;
-      }
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("success") === "true") {
+      router.replace("/dashboard");
+      // Subscription state is set by the Stripe webhook (api/stripe/webhook),
+      // not by this page. The webhook is normally near-instant, but the
+      // browser can land back here a moment before it's processed -- give
+      // it a couple of retries via the org context's refetch.
+      let attemptsLeft = 3;
+      const poll = async () => {
+        await refetchOrgs();
+        attemptsLeft -= 1;
+        if (attemptsLeft > 0) setTimeout(poll, 1500);
+      };
+      poll();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_subscribed")
-        .eq("id", session.user.id)
-        .single();
+  useEffect(() => {
+    if (currentOrg) {
+      fetchBots(currentOrg.id);
+    } else if (!isOrgLoading) {
+      setIsFetching(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentOrg?.id, isOrgLoading]);
 
-      const hasPaid = profile?.is_subscribed || false;
-      setIsSubscribed(hasPaid);
-
-      if (hasPaid) {
-        fetchBots(session.user.id);
-      } else {
-        setIsFetching(false);
-      }
-    };
-    init();
-  }, [router]);
-
-  const fetchBots = async (userId: string) => {
+  const fetchBots = async (orgId: string) => {
     setIsFetching(true);
     const { data } = await supabase
       .from("chatbots")
       .select("*")
-      .eq("user_id", userId)
+      .eq("org_id", orgId)
       .order("created_at", { ascending: false });
 
     if (data) setBots(data);
     setIsFetching(false);
   };
 
+  const handleCreateOrg = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newOrgName.trim()) return;
+    setIsCreatingOrg(true);
+    try {
+      const res = await fetch("/api/org", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newOrgName.trim() }),
+      });
+      const data = await res.json();
+      if (data.error) alert(data.error);
+      else await refetchOrgs();
+    } finally {
+      setIsCreatingOrg(false);
+    }
+  };
+
   const handleCheckout = async (priceId: string) => {
+    if (!currentOrg) return;
     setIsCheckoutLoading(true);
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, email: user.email, priceId }),
+        body: JSON.stringify({ orgId: currentOrg.id, email: user.email, priceId }),
       });
       const data = await res.json();
       if (data.url) {
@@ -177,7 +196,7 @@ export default function DashboardPage() {
 
   const handleCreateBot = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!currentOrg) return;
     setIsLoading(true);
 
     let formattedUrl = websiteUrl.trim();
@@ -193,7 +212,7 @@ export default function DashboardPage() {
       {
         name: botName,
         website_url: formattedUrl,
-        user_id: user.id,
+        org_id: currentOrg.id,
         primary_color: botColor,
         icon: botIcon,
       },
@@ -208,7 +227,7 @@ export default function DashboardPage() {
         const newBot = await supabase
           .from("chatbots")
           .select("id")
-          .eq("user_id", user.id)
+          .eq("org_id", currentOrg.id)
           .eq("website_url", formattedUrl)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -228,7 +247,7 @@ export default function DashboardPage() {
       setWebsiteUrl("");
       setBotColor("#4f46e5");
       setBotIcon("bot");
-      fetchBots(user.id);
+      fetchBots(currentOrg.id);
     }
   };
 
@@ -239,12 +258,12 @@ export default function DashboardPage() {
 
     const { error } = await supabase.from("chatbots").delete().eq("id", botId);
     if (error) alert("Error deleting chatbot: " + error.message);
-    else fetchBots(user.id);
+    else if (currentOrg) fetchBots(currentOrg.id);
   };
 
   /* ------------------------------ Loading ----------------------------- */
 
-  if (isSubscribed === null) {
+  if (isOrgLoading) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="flex items-center gap-3 text-sm text-ink-muted">
@@ -255,9 +274,44 @@ export default function DashboardPage() {
     );
   }
 
+  /* --------------------------- No organization ------------------------- */
+
+  if (orgs.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center px-6">
+        <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-8 text-center shadow-[var(--shadow-xs)]">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+            <Building2 className="h-7 w-7" />
+          </span>
+          <h1 className="mt-6 text-lg font-semibold text-ink-strong">Create your organization</h1>
+          <p className="mt-2 text-[15px] leading-relaxed text-ink-muted">
+            Chatbots belong to an organization, so your team can share access to them.
+          </p>
+          <form onSubmit={handleCreateOrg} className="mt-6 space-y-3">
+            <input
+              type="text"
+              required
+              value={newOrgName}
+              onChange={(e) => setNewOrgName(e.target.value)}
+              placeholder="e.g. Acme Inc"
+              className="ds-input"
+            />
+            <button
+              type="submit"
+              disabled={isCreatingOrg}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover disabled:opacity-60"
+            >
+              {isCreatingOrg ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create organization"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   /* ------------------------------ Paywall ----------------------------- */
 
-  if (!isSubscribed) {
+  if (currentOrg?.plan_status !== "active") {
     return (
       <div className="px-6 py-14 lg:px-10">
         <div className="mx-auto max-w-6xl">
@@ -300,12 +354,13 @@ export default function DashboardPage() {
                 </p>
 
                 <button
-                  onClick={() => handleCheckout(plan.env || plan.fallback)}
-                  disabled={isCheckoutLoading}
+                  onClick={() => plan.priceId && handleCheckout(plan.priceId)}
+                  disabled={isCheckoutLoading || !plan.priceId}
+                  title={!plan.priceId ? "This plan isn't configured yet." : undefined}
                   className={
                     plan.featured
-                      ? "mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover disabled:opacity-60"
-                      : "mt-7 flex w-full items-center justify-center gap-2 rounded-xl border border-line-strong bg-white px-5 py-3 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-60"
+                      ? "mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+                      : "mt-7 flex w-full items-center justify-center gap-2 rounded-xl border border-line-strong bg-white px-5 py-3 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
                   }
                 >
                   {isCheckoutLoading ? (
