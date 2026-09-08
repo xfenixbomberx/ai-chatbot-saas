@@ -1,26 +1,187 @@
 @import "tailwindcss";
 
+/* ============================================================
+   ChatBot Config — Design System
+   Light, premium, high-clarity. One accent, disciplined greys.
+   ============================================================ */
+
 :root {
+  /* Surfaces */
   --background: #ffffff;
-  --foreground: #171717;
+  --surface: #ffffff;
+  --surface-muted: #f7f8fa;
+  --surface-sunken: #f1f3f7;
+
+  /* Ink */
+  --foreground: #0b0e14;
+  --ink-strong: #0b0e14;
+  --ink: #3d4551;
+  --ink-muted: #6b7484;
+  --ink-faint: #98a1b0;
+
+  /* Lines */
+  --line: #e6e8ee;
+  --line-strong: #d5d9e2;
+
+  /* Brand */
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef0fe;
+  --accent-ink: #3730a3;
+
+  /* Semantic */
+  --positive: #0f8a5f;
+  --positive-soft: #e8f6f0;
+  --warning: #b45309;
+  --warning-soft: #fdf3e3;
+  --danger: #d1384e;
+  --danger-soft: #fdeef0;
+
+  /* Elevation — soft, low-contrast, never muddy */
+  --shadow-xs: 0 1px 2px rgba(11, 14, 20, 0.04);
+  --shadow-sm: 0 1px 3px rgba(11, 14, 20, 0.06), 0 1px 2px rgba(11, 14, 20, 0.04);
+  --shadow-md: 0 4px 12px rgba(11, 14, 20, 0.06), 0 1px 3px rgba(11, 14, 20, 0.04);
+  --shadow-lg: 0 12px 32px rgba(11, 14, 20, 0.08), 0 2px 8px rgba(11, 14, 20, 0.04);
+  --shadow-xl: 0 24px 60px rgba(11, 14, 20, 0.12), 0 4px 12px rgba(11, 14, 20, 0.05);
+  --shadow-accent: 0 8px 24px rgba(79, 70, 229, 0.22);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-sunken: var(--surface-sunken);
+
+  --color-ink-strong: var(--ink-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace;
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+::selection {
+  background: rgba(79, 70, 229, 0.16);
+  color: var(--ink-strong);
+}
+
+/* Headings default to tight, dark, optically balanced */
+h1, h2, h3, h4 {
+  color: var(--ink-strong);
+  letter-spacing: -0.02em;
+}
+
+/* ---------- Reusable primitives ---------- */
+
+.ds-container {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+.ds-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.ds-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.9375rem;
+  color: var(--ink-strong);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ds-input::placeholder { color: var(--ink-faint); }
+.ds-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.ds-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-strong);
+  margin-bottom: 0.375rem;
+}
+
+/* Subtle dotted texture for hero / empty states */
+.ds-dots {
+  background-image: radial-gradient(circle at 1px 1px, rgba(11, 14, 20, 0.055) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+/* Fine grid used behind the hero */
+.ds-grid-lines {
+  background-image:
+    linear-gradient(to right, rgba(11, 14, 20, 0.038) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(11, 14, 20, 0.038) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.ds-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
+.ds-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.ds-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+  border: 3px solid var(--background);
+}
+.ds-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+
+@keyframes ds-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.ds-rise { animation: ds-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .ds-rise { animation: none; }
 }

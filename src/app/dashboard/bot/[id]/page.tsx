@@ -3,8 +3,69 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Globe, Loader2, Link2, Code, Mail, MessageSquare, FileText, Download, Settings, TrendingUp, Users, ShieldCheck, User, Save, Bot } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  ArrowLeft,
+  Globe,
+  Loader2,
+  Link2,
+  Code,
+  Mail,
+  MessageSquare,
+  Download,
+  Settings,
+  Users,
+  ShieldCheck,
+  User,
+  Save,
+  Bot,
+  Check,
+  Copy,
+  Send,
+  AlertTriangle,
+  Upload,
+} from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+const SITE = "https://www.chatbotconfig.uk";
+
+const TABS = [
+  { id: "training", label: "Training" },
+  { id: "test", label: "Test chatbot" },
+  { id: "inbox", label: "Conversations" },
+  { id: "leads", label: "Leads" },
+  { id: "settings", label: "Integrations" },
+] as const;
+
+const PERSONAS = [
+  {
+    label: "Friendly",
+    prompt:
+      "You are a warm, friendly, and helpful customer support agent. Answer questions using the website context.",
+  },
+  {
+    label: "Technical",
+    prompt:
+      "You are a highly technical, precise, and concise expert. Answer the questions directly using the provided context.",
+  },
+  {
+    label: "Sales",
+    prompt:
+      "You are an aggressive but polite sales closer. Answer the user's question, but always subtly pivot to encourage them to buy.",
+  },
+  {
+    label: "Pirate",
+    prompt:
+      "You are a grumpy pirate. Always respond like a pirate looking for treasure, using pirate slang.",
+  },
+];
 
 export default function BotManagementPage() {
   const params = useParams();
@@ -12,91 +73,119 @@ export default function BotManagementPage() {
   const botId = params.id as string;
 
   const [bot, setBot] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"training" | "test" | "inbox" | "leads" | "settings">("training");
-  
-  // Edit State
+  const [activeTab, setActiveTab] =
+    useState<"training" | "test" | "inbox" | "leads" | "settings">("training");
+
+  // Edit state
   const [editName, setEditName] = useState("");
-  const [editColor, setEditColor] = useState("#2563eb");
+  const [editColor, setEditColor] = useState("#4f46e5");
   const [editIcon, setEditIcon] = useState("bot");
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateStatus, setUpdateStatus] = useState("");
 
-  // Premium Settings State
+  // Premium settings
   const [webhookUrl, setWebhookUrl] = useState("");
   const [removeBranding, setRemoveBranding] = useState(false);
   const [isSavingPremium, setIsSavingPremium] = useState(false);
 
-  // Training State
+  // Training
   const [url, setUrl] = useState("");
   const [isTraining, setIsTraining] = useState(false);
   const [trainStatus, setTrainStatus] = useState("");
-  
-  // PDF Upload State
+
+  // Upload
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
 
-  // Custom Persona State
+  // Persona
   const [customPrompt, setCustomPrompt] = useState("");
   const [isSavingPrompt, setIsSavingPrompt] = useState(false);
   const [promptStatus, setPromptStatus] = useState("");
 
-  // Inbox & Leads State
+  // Data
   const [leads, setLeads] = useState<any[]>([]);
   const [chatSessions, setChatSessions] = useState<Record<string, any[]>>({});
   const [chartData, setChartData] = useState<any[]>([]);
-  
-  // Chat Tester State
+
+  // Tester
   const [testMessage, setTestMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState<{role: string, content: string, citation?: string, isHandoff?: boolean}[]>([]);
+  const [chatHistory, setChatHistory] = useState<
+    { role: string; content: string; citation?: string; isHandoff?: boolean }[]
+  >([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isLiveAgentMode, setIsLiveAgentMode] = useState(false);
 
+  const [copied, setCopied] = useState<string | null>(null);
+
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [botId, activeTab]);
 
+  const copy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
   const fetchData = async () => {
-    // 1. Fetch Bot
-    const { data: botData } = await supabase.from("chatbots").select("*").eq("id", botId).single();
+    const { data: botData } = await supabase
+      .from("chatbots")
+      .select("*")
+      .eq("id", botId)
+      .single();
+
     if (botData) {
       setBot(botData);
       setEditName(botData.name);
-      setEditColor(botData.primary_color || "#2563eb");
+      setEditColor(botData.primary_color || "#4f46e5");
       setEditIcon(botData.icon || "bot");
       setCustomPrompt(botData.system_prompt || "");
       if (botData.webhook_url) setWebhookUrl(botData.webhook_url);
       if (botData.remove_branding) setRemoveBranding(botData.remove_branding);
       if (botData.website_url) {
-        // Pre-fill the scraper input with their website so they don't have to type it again
-        setUrl(prev => prev ? prev : botData.website_url);
+        setUrl((prev) => (prev ? prev : botData.website_url));
       }
     }
 
     if (activeTab === "leads" || activeTab === "inbox") {
-      const { data: leadsData } = await supabase.from("leads").select("*").eq("bot_id", botId).order("captured_at", { ascending: false });
+      const { data: leadsData } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("bot_id", botId)
+        .order("captured_at", { ascending: false });
       if (leadsData) setLeads(leadsData);
 
-      const { data: msgsData } = await supabase.from("chat_messages").select("*").eq("bot_id", botId).order("created_at", { ascending: true });
+      const { data: msgsData } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .eq("bot_id", botId)
+        .order("created_at", { ascending: true });
+
       if (msgsData) {
-        // Group by session_id
         const grouped: Record<string, any[]> = {};
-        msgsData.forEach(msg => {
+        msgsData.forEach((msg) => {
           if (!grouped[msg.session_id]) grouped[msg.session_id] = [];
           grouped[msg.session_id].push(msg);
         });
         setChatSessions(grouped);
-        
-        // Build 7-day analytics chart data
-        const last7Days = [...Array(7)].map((_, i) => {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          return d.toISOString().split('T')[0];
-        }).reverse();
 
-        const chartAgg = last7Days.map(date => {
-          const msgsOnDate = msgsData.filter(m => m.created_at.startsWith(date)).length;
-          const leadsOnDate = (leadsData || []).filter(l => l.captured_at.startsWith(date)).length;
+        const last7Days = [...Array(7)]
+          .map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            return d.toISOString().split("T")[0];
+          })
+          .reverse();
+
+        const chartAgg = last7Days.map((date) => {
+          const msgsOnDate = msgsData.filter((m) =>
+            m.created_at.startsWith(date)
+          ).length;
+          const leadsOnDate = (leadsData || []).filter((l) =>
+            (l.captured_at || "").startsWith(date)
+          ).length;
           return { name: date.slice(5), Messages: msgsOnDate, Leads: leadsOnDate };
         });
         setChartData(chartAgg);
@@ -109,12 +198,17 @@ export default function BotManagementPage() {
     if (!url) return;
 
     let formattedUrl = url.trim();
-    if (formattedUrl && !formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
+    if (
+      formattedUrl &&
+      !formattedUrl.startsWith("http://") &&
+      !formattedUrl.startsWith("https://")
+    ) {
       formattedUrl = "https://" + formattedUrl;
     }
 
     setIsTraining(true);
-    setTrainStatus("Training Bot... This may take a few minutes.");
+    setUploadStatus("");
+    setTrainStatus("Training… this can take a few minutes on larger sites.");
 
     try {
       const res = await fetch("/api/train", {
@@ -125,12 +219,14 @@ export default function BotManagementPage() {
 
       const data = await res.json();
       if (data.success) {
-        setTrainStatus(`Success! Trained on ${data.chunksProcessed} data chunks across ${data.pagesScraped || 1} pages.`);
+        setTrainStatus(
+          `Trained on ${data.chunksProcessed} chunks across ${data.pagesScraped || 1} page(s).`
+        );
       } else {
         setTrainStatus(`Error: ${data.error}`);
       }
-    } catch (err) {
-      setTrainStatus("An error occurred during training.");
+    } catch {
+      setTrainStatus("Error: something went wrong during training.");
     } finally {
       setIsTraining(false);
     }
@@ -141,24 +237,30 @@ export default function BotManagementPage() {
     if (!testMessage.trim()) return;
 
     const userMsg = testMessage.trim();
-    setChatHistory(prev => [...prev, { role: 'user', content: userMsg }]);
+    setChatHistory((prev) => [...prev, { role: "user", content: userMsg }]);
     setTestMessage("");
     setIsTyping(true);
 
     try {
-      // We use a constant test session ID for dashboard testing so it groups nicely in the logs
-      const testSessionId = `test-dashboard-${botId.substring(0,6)}`;
-      
+      const testSessionId = `test-dashboard-${botId.substring(0, 6)}`;
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ botId, message: userMsg, sessionId: testSessionId })
+        body: JSON.stringify({ botId, message: userMsg, sessionId: testSessionId }),
       });
       const data = await res.json();
-      setChatHistory(prev => [...prev, { role: 'bot', content: data.answer || "Error getting response.", citation: data.citation, isHandoff: data.isHandoff }]);
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          role: "bot",
+          content: data.answer || "Error getting response.",
+          citation: data.citation,
+          isHandoff: data.isHandoff,
+        },
+      ]);
       if (data.isHandoff) setIsLiveAgentMode(true);
-    } catch (e) {
-      setChatHistory(prev => [...prev, { role: 'bot', content: "Network error." }]);
+    } catch {
+      setChatHistory((prev) => [...prev, { role: "bot", content: "Network error." }]);
     } finally {
       setIsTyping(false);
     }
@@ -168,11 +270,14 @@ export default function BotManagementPage() {
     setIsSavingPrompt(true);
     setPromptStatus("");
     try {
-      const { error } = await supabase.from("chatbots").update({ system_prompt: customPrompt }).eq("id", botId);
+      const { error } = await supabase
+        .from("chatbots")
+        .update({ system_prompt: customPrompt })
+        .eq("id", botId);
       if (error) throw error;
-      setPromptStatus("Persona saved successfully!");
+      setPromptStatus("Persona saved.");
       setTimeout(() => setPromptStatus(""), 3000);
-    } catch (e: any) {
+    } catch {
       setPromptStatus("Error saving persona.");
     } finally {
       setIsSavingPrompt(false);
@@ -182,14 +287,16 @@ export default function BotManagementPage() {
   const handleSavePremiumSettings = async () => {
     setIsSavingPremium(true);
     try {
-      const { error } = await supabase.from("chatbots").update({
-        webhook_url: webhookUrl,
-        remove_branding: removeBranding
-      }).eq("id", botId);
+      const { error } = await supabase
+        .from("chatbots")
+        .update({ webhook_url: webhookUrl, remove_branding: removeBranding })
+        .eq("id", botId);
       if (error) throw error;
-      alert("Premium settings saved successfully!");
-    } catch (e: any) {
-      alert("Please ensure the 'webhook_url' (text) and 'remove_branding' (boolean) columns exist in your Supabase 'chatbots' table.");
+      alert("Integration settings saved.");
+    } catch {
+      alert(
+        "Please ensure the 'webhook_url' (text) and 'remove_branding' (boolean) columns exist in your Supabase 'chatbots' table."
+      );
     } finally {
       setIsSavingPremium(false);
     }
@@ -200,24 +307,22 @@ export default function BotManagementPage() {
     if (!file) return;
 
     setIsUploading(true);
-    setUploadStatus("Uploading and parsing document...");
+    setTrainStatus("");
+    setUploadStatus("Uploading and parsing document…");
 
     const formData = new FormData();
     formData.append("botId", botId);
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (data.success) {
-        setUploadStatus(`Success! Trained on ${data.chunksProcessed} chunks from document.`);
+        setUploadStatus(`Trained on ${data.chunksProcessed} chunks from the document.`);
       } else {
         setUploadStatus(`Error: ${data.error}`);
       }
-    } catch (err) {
+    } catch {
       setUploadStatus("Error uploading file.");
     } finally {
       setIsUploading(false);
@@ -227,438 +332,601 @@ export default function BotManagementPage() {
   const handleExportCSV = () => {
     if (leads.length === 0) return;
     const header = "Email,Date Captured\n";
-    const csv = leads.map(l => `${l.email},${new Date(l.captured_at).toISOString()}`).join("\n");
-    const blob = new Blob([header + csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    const csv = leads
+      .map((l) => `${l.email},${new Date(l.captured_at).toISOString()}`)
+      .join("\n");
+    const blob = new Blob([header + csv], { type: "text/csv" });
+    const objectUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
     a.download = `leads-${botId}.csv`;
     a.click();
-    window.URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(objectUrl);
   };
 
   const handleUpdateBot = async () => {
     setIsUpdating(true);
     setUpdateStatus("");
-    const { error } = await supabase.from("chatbots").update({
-      name: editName,
-      primary_color: editColor,
-      icon: editIcon
-    }).eq("id", botId);
-    
+    const { error } = await supabase
+      .from("chatbots")
+      .update({ name: editName, primary_color: editColor, icon: editIcon })
+      .eq("id", botId);
+
     if (error) {
       setUpdateStatus("Error updating bot details.");
     } else {
-      setUpdateStatus("Bot details updated successfully!");
-      setBot((prev: any) => ({ ...prev, name: editName, primary_color: editColor, icon: editIcon }));
+      setUpdateStatus("Appearance saved.");
+      setBot((prev: any) => ({
+        ...prev,
+        name: editName,
+        primary_color: editColor,
+        icon: editIcon,
+      }));
       setTimeout(() => setUpdateStatus(""), 3000);
     }
     setIsUpdating(false);
   };
 
-  if (!bot) return <div className="p-8 text-slate-400">Loading...</div>;
+  const embedSnippet = `<script src="${SITE}/widget-v2.js" data-bot-id="${botId}"></script>`;
 
-  return (
-    <div className="p-8 max-w-7xl mx-auto h-screen flex flex-col font-sans">
-      <div className="flex items-center gap-6 mb-10">
-        <button onClick={() => router.push("/dashboard")} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-slate-400 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-3xl font-black text-white tracking-tight">{bot.name}</h1>
-          <p className="text-slate-400 flex items-center gap-2 mt-1 font-medium">
-            <Link2 className="w-4 h-4 text-indigo-400" /> Manage your chatbot settings and data
-          </p>
+  const sessionCount = Object.keys(chatSessions).length;
+  const deflection =
+    sessionCount > 0
+      ? Math.round(
+          ((sessionCount -
+            Object.values(chatSessions).filter((session) =>
+              session.some(
+                (msg) =>
+                  msg.role === "bot" && msg.content.includes("alerted our human team")
+              )
+            ).length) /
+            sessionCount) *
+            100
+        )
+      : 100;
+
+  if (!bot) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="flex items-center gap-3 text-sm text-ink-muted">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading chatbot…
         </div>
       </div>
+    );
+  }
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-white/10 mb-8 overflow-x-auto pb-4">
-        <button 
-          onClick={() => setActiveTab("training")}
-          className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors whitespace-nowrap ${activeTab === 'training' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-        >
-          Training
-        </button>
-        <button 
-          onClick={() => setActiveTab("test")}
-          className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors whitespace-nowrap ${activeTab === 'test' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-        >
-          Test Chatbot
-        </button>
-        <button 
-          onClick={() => setActiveTab("inbox")}
-          className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors whitespace-nowrap ${activeTab === 'inbox' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-        >
-          Inbox (Chat Logs)
-        </button>
-        <button 
-          onClick={() => setActiveTab("leads")}
-          className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors whitespace-nowrap ${activeTab === 'leads' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-        >
-          Captured Leads
-        </button>
-        <button 
-          onClick={() => setActiveTab("settings")}
-          className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors whitespace-nowrap ${activeTab === 'settings' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-        >
-          Settings
-        </button>
-      </div>
+  return (
+    <div className="px-6 py-8 lg:px-10">
+      <div className="mx-auto max-w-6xl">
+        {/* Header */}
+        <div className="flex items-start gap-4">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="mt-1 rounded-lg border border-line bg-white p-2 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink-strong"
+            aria-label="Back to dashboard"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
 
-        <div className="flex-1 overflow-auto pb-20">
-          {/* TAB 1: TRAINING */}
+          <span
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-base font-semibold text-white"
+            style={{ backgroundColor: bot.primary_color || "#4f46e5" }}
+          >
+            {bot.name?.charAt(0)?.toUpperCase()}
+          </span>
+
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-semibold tracking-[-0.02em] text-ink-strong">
+              {bot.name}
+            </h1>
+            {bot.website_url && (
+              <a
+                href={bot.website_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1.5 font-mono text-[13px] text-ink-muted transition-colors hover:text-accent"
+              >
+                <Globe className="h-3.5 w-3.5" />
+                {bot.website_url.replace(/^https?:\/\//, "")}
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="mt-8 border-b border-line">
+          <div className="ds-scrollbar -mb-px flex gap-1 overflow-x-auto">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={
+                  activeTab === tab.id
+                    ? "whitespace-nowrap border-b-2 border-accent px-4 py-3 text-sm font-semibold text-accent"
+                    : "whitespace-nowrap border-b-2 border-transparent px-4 py-3 text-sm font-medium text-ink-muted transition-colors hover:text-ink-strong"
+                }
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="py-8">
+          {/* ------------------------- TRAINING ------------------------- */}
           {activeTab === "training" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start pb-12 pt-4">
-              
-              {/* Card 1: Train Model */}
-              <div className="bg-slate-900/50 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-lg flex flex-col group hover:border-blue-500/30 transition-all">
-                <div className="flex items-center gap-2 mb-2">
-                  <Globe className="w-5 h-5 text-blue-400" />
-                  <h2 className="text-base font-bold text-white">Train AI Model</h2>
-                </div>
-                <p className="text-xs text-slate-400 mb-4 font-medium">
-                  Enter a website URL or upload a document to build your knowledge base.
-                </p>
-                <div className="flex flex-col gap-3">
-                  <form onSubmit={handleTrain} className="flex flex-col gap-3">
+            <div className="grid items-start gap-6 lg:grid-cols-2">
+              {/* Knowledge base */}
+              <Card
+                icon={<Globe className="h-[18px] w-[18px]" />}
+                title="Knowledge base"
+                subtitle="Crawl a website or upload a document to train this bot."
+              >
+                <form onSubmit={handleTrain} className="space-y-3">
+                  <div>
+                    <label className="ds-label">Website URL</label>
                     <input
                       type="text"
-                      placeholder="e.g. www.example.com"
+                      placeholder="www.example.com"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
-                      className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-white bg-slate-950/50"
+                      className="ds-input"
                     />
-                    <button
-                      type="submit"
-                      disabled={isTraining}
-                      className="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-colors disabled:bg-blue-800 disabled:text-blue-300 flex items-center justify-center shadow-md"
-                    >
-                      {isTraining ? (
-                        <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Training...</>
-                      ) : (
-                        "Train Chatbot"
-                      )}
-                    </button>
-                  </form>
-                  <div className="relative flex items-center py-2">
-                    <div className="flex-grow border-t border-white/5"></div>
-                    <span className="flex-shrink-0 mx-4 text-xs text-slate-500 font-bold">OR</span>
-                    <div className="flex-grow border-t border-white/5"></div>
                   </div>
-                  <input type="file" accept=".pdf,.txt,.png,.jpg,.jpeg,.webp" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
-                  <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  <button
+                    type="submit"
+                    disabled={isTraining}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover disabled:opacity-60"
                   >
-                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4"/>} 
-                    Upload File
+                    {isTraining ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Training…
+                      </>
+                    ) : (
+                      "Train from website"
+                    )}
                   </button>
-                </div>
-                {(trainStatus || uploadStatus) && (
-                  <p className={`mt-4 text-xs font-bold ${(trainStatus || uploadStatus)?.includes('Error') ? 'text-red-400' : 'text-green-400'}`}>
-                    {trainStatus || uploadStatus}
-                  </p>
-                )}
-              </div>
+                </form>
 
-              {/* Card 2: Identity & Appearance */}
-              <div className="bg-slate-900/50 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-lg flex flex-col group hover:border-indigo-500/30 transition-all">
-                <div className="flex items-center gap-2 mb-2">
-                  <Settings className="w-5 h-5 text-indigo-400" />
-                  <h2 className="text-base font-bold text-white">Identity & Appearance</h2>
+                <div className="my-5 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-line" />
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
+                    or
+                  </span>
+                  <span className="h-px flex-1 bg-line" />
                 </div>
-                <p className="text-xs text-slate-400 mb-4 font-medium">
-                  Customize how your bot looks on your website.
-                </p>
-                <div className="flex flex-col gap-4">
+
+                <input
+                  type="file"
+                  accept=".pdf,.txt,.png,.jpg,.jpeg,.webp"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-line-strong bg-surface-muted px-4 py-3 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-sunken disabled:opacity-60"
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  Upload a PDF, text file or image
+                </button>
+
+                <StatusNote text={trainStatus || uploadStatus} />
+              </Card>
+
+              {/* Appearance */}
+              <Card
+                icon={<Settings className="h-[18px] w-[18px]" />}
+                title="Identity & appearance"
+                subtitle="How the widget presents itself on your site."
+              >
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1">Bot Name</label>
+                    <label className="ds-label">Bot name</label>
                     <input
                       type="text"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-white bg-slate-950/50"
+                      className="ds-input"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1">Widget Icon</label>
-                    <select
-                      value={editIcon}
-                      onChange={(e) => setEditIcon(e.target.value)}
-                      className="w-full px-3 py-2 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-slate-950/50 text-white"
-                    >
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="ds-label">Widget icon</label>
+                      <select
+                        value={editIcon}
+                        onChange={(e) => setEditIcon(e.target.value)}
+                        className="ds-input h-[42px]"
+                      >
                         <option value="bot">Robot</option>
-                        <option value="message">Message Bubble</option>
+                        <option value="message">Message bubble</option>
                         <option value="sparkles">Sparkles</option>
-                        <option value="support">Life Saver</option>
-                        <option value="chat">Double Chat</option>
-                        <option value="magic">Magic Wand</option>
-                        <option value="smile">Smiley Face</option>
+                        <option value="support">Life saver</option>
+                        <option value="chat">Double chat</option>
+                        <option value="magic">Magic wand</option>
+                        <option value="smile">Smiley face</option>
                       </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1">Brand Color</label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={editColor}
-                        onChange={(e) => setEditColor(e.target.value)}
-                        className="w-8 h-8 p-1 border border-white/10 bg-slate-950/50 rounded-lg cursor-pointer"
-                      />
-                      <span className="text-xs text-slate-400 font-mono px-2 py-1 bg-slate-950/50 rounded-md border border-white/5">{editColor}</span>
+                    </div>
+                    <div>
+                      <label className="ds-label">Brand colour</label>
+                      <div className="flex items-center gap-2 rounded-lg border border-line-strong bg-white p-1.5">
+                        <input
+                          type="color"
+                          value={editColor}
+                          onChange={(e) => setEditColor(e.target.value)}
+                          className="h-7 w-7 cursor-pointer rounded border-0 bg-transparent p-0"
+                        />
+                        <span className="font-mono text-[13px] uppercase text-ink-muted">
+                          {editColor}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <button 
-                    onClick={handleUpdateBot} 
+
+                  <button
+                    onClick={handleUpdateBot}
                     disabled={isUpdating}
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-bold disabled:bg-indigo-900 disabled:text-indigo-400 flex items-center justify-center gap-2 shadow-md"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-line-strong bg-white px-4 py-2.5 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-60"
                   >
-                    {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Appearance'}
+                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save appearance"}
                   </button>
-                  {updateStatus && <p className={`text-xs font-bold text-center ${updateStatus.includes('Error') ? 'text-red-400' : 'text-indigo-400'}`}>{updateStatus}</p>}
+                  <StatusNote text={updateStatus} />
                 </div>
-              </div>
+              </Card>
 
-              {/* Card 3: Custom Persona */}
-              <div className="bg-slate-900/50 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-lg flex flex-col group hover:border-emerald-500/30 transition-all">
-                <div className="flex items-center gap-2 mb-2">
-                  <Bot className="w-5 h-5 text-emerald-400" />
-                  <h2 className="text-base font-bold text-white">Custom Persona</h2>
+              {/* Persona */}
+              <Card
+                icon={<Bot className="h-[18px] w-[18px]" />}
+                title="Persona"
+                subtitle="Instructions that shape how the AI answers."
+              >
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {PERSONAS.map((p) => (
+                    <button
+                      key={p.label}
+                      onClick={() => setCustomPrompt(p.prompt)}
+                      className="rounded-full border border-line bg-surface-muted px-3 py-1.5 text-[13px] font-medium text-ink-muted transition-colors hover:border-accent/30 hover:bg-accent-soft hover:text-accent"
+                    >
+                      {p.label}
+                    </button>
+                  ))}
                 </div>
-                <p className="text-xs text-slate-400 mb-4 font-medium">
-                  Give your AI specific instructions on how to behave.
-                </p>
-                <div className="flex flex-col gap-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => setCustomPrompt("You are a warm, friendly, and helpful customer support agent. Answer questions using the website context.")} className="text-[10px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 px-2 py-1.5 rounded-lg transition-colors text-left truncate">Friendly</button>
-                    <button onClick={() => setCustomPrompt("You are a highly technical, precise, and concise expert. Answer the questions directly using the provided context.")} className="text-[10px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 px-2 py-1.5 rounded-lg transition-colors text-left truncate">Technical</button>
-                    <button onClick={() => setCustomPrompt("You are an aggressive but polite sales closer. Answer the user's question, but always subtly pivot to encourage them to buy.")} className="text-[10px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 px-2 py-1.5 rounded-lg transition-colors text-left truncate">Sales</button>
-                    <button onClick={() => setCustomPrompt("You are a grumpy pirate. Always respond like a pirate looking for treasure, using pirate slang.")} className="text-[10px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 px-2 py-1.5 rounded-lg transition-colors text-left truncate">Pirate</button>
-                  </div>
-                  <textarea 
-                    value={customPrompt}
-                    onChange={(e) => setCustomPrompt(e.target.value)}
-                    placeholder="You are a friendly support bot..."
-                    className="w-full h-32 p-3 border border-white/10 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none bg-slate-950/50 text-white placeholder-slate-600"
-                  />
-                  <button 
-                    onClick={handleSavePrompt} 
-                    disabled={isSavingPrompt}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold disabled:bg-emerald-900 disabled:text-emerald-400 flex items-center justify-center gap-2 shadow-md"
-                  >
-                    {isSavingPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Persona'}
-                  </button>
-                  {promptStatus && <p className="text-xs font-bold text-emerald-400 text-center">{promptStatus}</p>}
-                </div>
-              </div>
-
-              {/* Card 4: Embed */}
-              <div className="bg-slate-900/50 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-lg flex flex-col group hover:border-purple-500/30 transition-all">
-                <div className="flex items-center gap-2 mb-2">
-                  <Code className="w-5 h-5 text-purple-400" />
-                  <h2 className="text-base font-bold text-white">Embed on Website</h2>
-                </div>
-                <p className="text-xs text-slate-400 mb-4 font-medium">
-                  Copy and paste this code right before the closing <code className="bg-white/10 px-1 rounded text-slate-300">&lt;/body&gt;</code> tag on your website.
-                </p>
-                <div className="bg-slate-950/80 rounded-xl p-4 relative flex-1 flex flex-col justify-center border border-white/5">
-                  <code className="text-xs text-indigo-300 break-all font-mono leading-relaxed block">
-                    &lt;script src="{'https://www.chatbotconfig.uk'}/widget-v2.js" data-bot-id="{botId}"&gt;&lt;/script&gt;
-                  </code>
-                </div>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(`<script src="${'https://www.chatbotconfig.uk'}/widget-v2.js" data-bot-id="${botId}"></script>`);
-                    alert("Copied to clipboard!");
-                  }}
-                  className="w-full mt-4 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-md"
+                <textarea
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder="You are a friendly support bot…"
+                  rows={6}
+                  className="ds-input resize-none text-[13px]"
+                />
+                <button
+                  onClick={handleSavePrompt}
+                  disabled={isSavingPrompt}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-line-strong bg-white px-4 py-2.5 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-60"
                 >
-                  <Code className="w-4 h-4" /> Copy Code
+                  {isSavingPrompt ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save persona"}
                 </button>
-              </div>
+                <StatusNote text={promptStatus} />
+              </Card>
+
+              {/* Embed */}
+              <Card
+                icon={<Code className="h-[18px] w-[18px]" />}
+                title="Embed on your website"
+                subtitle="Paste this just before the closing </body> tag."
+              >
+                <div className="overflow-hidden rounded-lg border border-line bg-[#0f1218]">
+                  <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+                    <span className="font-mono text-[11px] uppercase tracking-wider text-white/40">
+                      Snippet
+                    </span>
+                    <button
+                      onClick={() => copy(embedSnippet, "embed")}
+                      className="inline-flex items-center gap-1.5 rounded bg-white/10 px-2 py-1 text-[11px] font-medium text-white/80 transition-colors hover:bg-white/20"
+                    >
+                      {copied === "embed" ? (
+                        <>
+                          <Check className="h-3 w-3" /> Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3" /> Copy
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <pre className="overflow-x-auto px-4 py-3">
+                    <code className="font-mono text-[12px] leading-relaxed text-white/85">
+                      {embedSnippet}
+                    </code>
+                  </pre>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between rounded-lg border border-line bg-surface-muted px-4 py-3">
+                  <div>
+                    <p className="text-[13px] font-semibold text-ink-strong">
+                      Shareable demo page
+                    </p>
+                    <p className="mt-0.5 font-mono text-[12px] text-ink-muted">
+                      /demo/{botId.substring(0, 8)}…
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => copy(`${SITE}/demo/${botId}`, "demo")}
+                    className="shrink-0 rounded-lg border border-line-strong bg-white px-3 py-1.5 text-[13px] font-semibold text-ink-strong transition-colors hover:bg-surface-muted"
+                  >
+                    {copied === "demo" ? "Copied" : "Copy link"}
+                  </button>
+                </div>
+              </Card>
             </div>
           )}
 
-        {/* TAB 2: TEST CHATBOT */}
-        {activeTab === "test" && (
-          <div className="w-full max-w-5xl mx-auto bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg flex flex-col h-[600px] overflow-hidden group">
-            <div className="border-b border-white/10 px-6 py-4 bg-slate-900/80 flex justify-between items-start">
-              <div>
-                <h2 className="text-lg font-bold text-white">Test Chatbot</h2>
-                <p className="text-sm text-slate-400 font-medium">Test how the AI answers based on the training data.</p>
-              </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`${'https://www.chatbotconfig.uk'}/demo/${botId}`);
-                  alert("Demo link copied to clipboard!");
-                }}
-                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm"
-              >
-                Copy Demo Link
-              </button>
-            </div>
-            <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-950/50">
-              {chatHistory.length === 0 ? (
-                <div className="text-center text-slate-500 font-medium mt-20">Send a message to start testing</div>
-              ) : (
-                chatHistory.map((msg, i) => (
-                  <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                    <div className={`px-4 py-2 rounded-2xl max-w-[80%] whitespace-pre-wrap shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-slate-800 border border-white/5 text-slate-200 rounded-tl-sm'}`}>
-                      {msg.content}
-                    </div>
-                    {msg.citation && (
-                      <a href={msg.citation} target="_blank" rel="noopener noreferrer" className="text-[10px] mt-1 text-slate-400 hover:text-indigo-400 bg-slate-900 px-2 py-0.5 rounded-full border border-white/10 flex items-center gap-1 transition-colors">
-                        <Link2 className="w-3 h-3" /> Source
-                      </a>
-                    )}
-                  </div>
-                ))
-              )}
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="px-4 py-2 rounded-2xl bg-slate-800 border border-white/5 text-slate-400 rounded-tl-sm shadow-sm flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Typing...
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {isLiveAgentMode ? (
-              <div className="p-4 bg-amber-500/10 border-t border-amber-500/20 flex flex-col items-center justify-center text-amber-500">
-                <span className="font-bold flex items-center gap-2"><Globe className="w-4 h-4" /> Live Agent Handoff Triggered</span>
-                <p className="text-xs mt-1 text-amber-500/80">The AI has paused. An email has been sent to the team.</p>
-                <button onClick={() => { setIsLiveAgentMode(false); setChatHistory([]); }} className="mt-3 text-xs bg-amber-500 hover:bg-amber-400 text-white px-3 py-1.5 rounded-md font-bold transition-colors shadow-md">Restart Session</button>
-              </div>
-            ) : (
-              <form onSubmit={handleTestChat} className="p-4 bg-slate-900/80 border-t border-white/10 flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Ask a question..."
-                  value={testMessage}
-                  onChange={(e) => setTestMessage(e.target.value)}
-                  className="flex-1 px-4 py-2 bg-slate-950/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-slate-500"
-                />
-                <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(79,70,229,0.2)]">
-                  Send
-                </button>
-              </form>
-            )}
-          </div>
-        )}
-
-        {/* TAB 3: INBOX & ANALYTICS */}
-        {activeTab === "inbox" && (
-          <div className="space-y-8">
-            
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg p-6 relative overflow-hidden group hover:border-indigo-500/30 transition-all">
-                <div className="flex justify-between items-start mb-4">
-                  <p className="text-sm font-bold text-slate-400">Total Conversations</p>
-                  <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg group-hover:scale-110 transition-transform">
-                    <MessageSquare className="w-5 h-5" />
-                  </div>
-                </div>
-                <div className="text-4xl font-black text-white tracking-tight">{Object.keys(chatSessions).length}</div>
-                <p className="text-xs text-emerald-400 mt-3 flex items-center font-bold bg-emerald-500/10 w-max px-2 py-1 rounded-md border border-emerald-500/20">
-                  <TrendingUp className="w-3 h-3 mr-1" /> +12% this week
-                </p>
-              </div>
-              
-              <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg p-6 relative overflow-hidden group hover:border-blue-500/30 transition-all">
-                <div className="flex justify-between items-start mb-4">
-                  <p className="text-sm font-bold text-slate-400">Total Leads</p>
-                  <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg group-hover:scale-110 transition-transform">
-                    <Users className="w-5 h-5" />
-                  </div>
-                </div>
-                <div className="text-4xl font-black text-white tracking-tight">{leads.length}</div>
-                <p className="text-xs text-emerald-400 mt-3 flex items-center font-bold bg-emerald-500/10 w-max px-2 py-1 rounded-md border border-emerald-500/20">
-                  <TrendingUp className="w-3 h-3 mr-1" /> +5% this week
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl shadow-[0_0_30px_rgba(79,70,229,0.2)] border border-indigo-400/30 p-6 relative overflow-hidden group hover:shadow-[0_0_40px_rgba(79,70,229,0.4)] transition-all text-white">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                <div className="flex justify-between items-start mb-4 relative z-10">
-                  <p className="text-sm font-bold text-indigo-100">AI Deflection Rate</p>
-                  <div className="p-2 bg-white/20 rounded-lg group-hover:scale-110 transition-transform">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                </div>
-                <div className="text-4xl font-black tracking-tight relative z-10 text-white">
-                  {Object.keys(chatSessions).length > 0 
-                    ? Math.round(((Object.keys(chatSessions).length - Object.values(chatSessions).filter(session => session.some(msg => msg.role === 'bot' && msg.content.includes("alerted our human team"))).length) / Object.keys(chatSessions).length) * 100) 
-                    : 100}%
-                </div>
-                <p className="text-xs text-indigo-100 mt-3 font-bold relative z-10">
-                  Resolved without human help
-                </p>
-              </div>
-            </div>
-
-            {/* Analytics Chart */}
-            <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg p-6">
-              <h2 className="text-xl font-bold text-white tracking-tight mb-6">7-Day Activity</h2>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff10" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 600}} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 600}} dx={-10} />
-                    <Tooltip contentStyle={{backgroundColor: '#0f172a', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.5)'}} itemStyle={{color: '#fff'}} />
-                    <Line type="monotone" dataKey="Messages" stroke="#6366f1" strokeWidth={3} dot={{r: 4, strokeWidth: 2, fill: '#0f172a', stroke: '#6366f1'}} activeDot={{r: 6, strokeWidth: 0, fill: '#6366f1'}} />
-                    <Line type="monotone" dataKey="Leads" stroke="#3b82f6" strokeWidth={3} dot={{r: 4, strokeWidth: 2, fill: '#0f172a', stroke: '#3b82f6'}} activeDot={{r: 6, strokeWidth: 0, fill: '#3b82f6'}} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Chat Logs */}
-            <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg overflow-hidden">
-              <div className="p-6 border-b border-white/10 flex items-center justify-between bg-slate-900/80">
+          {/* --------------------------- TEST --------------------------- */}
+          {activeTab === "test" && (
+            <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-sm)]">
+              <div className="flex items-center justify-between border-b border-line bg-surface-muted px-6 py-4">
                 <div>
-                  <h2 className="text-xl font-bold text-white tracking-tight">Recent Conversations</h2>
-                  <p className="text-sm text-slate-400 font-medium mt-1">Review exactly how the AI is handling customer queries.</p>
+                  <h2 className="text-[15px] font-semibold text-ink-strong">
+                    Test chatbot
+                  </h2>
+                  <p className="mt-0.5 text-[13px] text-ink-muted">
+                    Check how it answers from the current training data.
+                  </p>
                 </div>
-                <button 
-                  onClick={() => {
-                    const csvContent = "data:text/csv;charset=utf-8,Session ID,Role,Message\n" + 
-                      Object.entries(chatSessions).flatMap(([sId, msgs]) => msgs.map(m => `${sId},${m.role},"${m.content.replace(/"/g, '""')}"`)).join("\n");
-                    const link = document.createElement("a");
-                    link.setAttribute("href", encodeURI(csvContent));
-                    link.setAttribute("download", `chat_logs_${botId}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                  }}
-                  disabled={Object.keys(chatSessions).length === 0}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-[0_0_15px_rgba(79,70,229,0.2)] hover:shadow-[0_0_25px_rgba(79,70,229,0.4)] disabled:opacity-50"
+                <button
+                  onClick={() => setChatHistory([])}
+                  className="rounded-lg border border-line-strong bg-white px-3 py-1.5 text-[13px] font-semibold text-ink-strong transition-colors hover:bg-surface-muted"
                 >
-                  <Download className="w-4 h-4" /> Export Chat Logs
+                  Clear
                 </button>
               </div>
-              <div className="p-0 bg-slate-950/50">
-                {Object.keys(chatSessions).length === 0 ? (
-                  <div className="p-12 text-center text-slate-500 font-medium">No chat history found yet.</div>
+
+              <div className="ds-dots ds-scrollbar h-[440px] space-y-4 overflow-y-auto p-6">
+                {chatHistory.length === 0 ? (
+                  <div className="flex h-full flex-col items-center justify-center text-center">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+                      <MessageSquare className="h-6 w-6" />
+                    </span>
+                    <p className="mt-4 text-[15px] font-medium text-ink-strong">
+                      Send a message to start testing
+                    </p>
+                    <p className="mt-1 text-sm text-ink-muted">
+                      Try a question a real customer would ask.
+                    </p>
+                  </div>
                 ) : (
-                  <div className="divide-y divide-white/5">
+                  chatHistory.map((msg, i) => (
+                    <div
+                      key={i}
+                      className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
+                    >
+                      <div
+                        className={
+                          msg.role === "user"
+                            ? "max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-tr-md bg-accent px-4 py-2.5 text-sm leading-relaxed text-white shadow-[var(--shadow-sm)]"
+                            : "max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-tl-md border border-line bg-white px-4 py-2.5 text-sm leading-relaxed text-ink shadow-[var(--shadow-sm)]"
+                        }
+                      >
+                        {msg.content}
+                      </div>
+                      {msg.citation && (
+                        <a
+                          href={msg.citation}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-line bg-white px-2 py-0.5 text-[11px] font-medium text-ink-muted transition-colors hover:text-accent"
+                        >
+                          <Link2 className="h-3 w-3" />
+                          Source
+                        </a>
+                      )}
+                    </div>
+                  ))
+                )}
+                {isTyping && (
+                  <div className="flex items-center gap-2 rounded-2xl rounded-tl-md border border-line bg-white px-4 py-2.5 text-sm text-ink-muted shadow-[var(--shadow-sm)] w-fit">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Typing…
+                  </div>
+                )}
+              </div>
+
+              {isLiveAgentMode ? (
+                <div className="flex flex-col items-center gap-2 border-t border-warning/20 bg-warning-soft px-6 py-5 text-center">
+                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-warning">
+                    <AlertTriangle className="h-4 w-4" />
+                    Live agent handoff triggered
+                  </span>
+                  <p className="text-[13px] text-warning/80">
+                    The AI has paused and an email has been sent to your team.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setIsLiveAgentMode(false);
+                      setChatHistory([]);
+                    }}
+                    className="mt-2 rounded-lg bg-warning px-3.5 py-1.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+                  >
+                    Restart session
+                  </button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={handleTestChat}
+                  className="flex gap-2 border-t border-line bg-white p-4"
+                >
+                  <input
+                    type="text"
+                    placeholder="Ask a question…"
+                    value={testMessage}
+                    onChange={(e) => setTestMessage(e.target.value)}
+                    className="ds-input flex-1"
+                  />
+                  <button
+                    type="submit"
+                    className="flex shrink-0 items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover"
+                  >
+                    <Send className="h-4 w-4" />
+                    Send
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* --------------------------- INBOX -------------------------- */}
+          {activeTab === "inbox" && (
+            <div className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Stat
+                  label="Conversations"
+                  value={sessionCount}
+                  icon={<MessageSquare className="h-[18px] w-[18px]" />}
+                />
+                <Stat
+                  label="Leads captured"
+                  value={leads.length}
+                  icon={<Users className="h-[18px] w-[18px]" />}
+                />
+                <Stat
+                  label="Resolved without a human"
+                  value={`${deflection}%`}
+                  icon={<ShieldCheck className="h-[18px] w-[18px]" />}
+                  accent
+                />
+              </div>
+
+              <div className="rounded-2xl border border-line bg-white p-6 shadow-[var(--shadow-xs)]">
+                <h2 className="text-[15px] font-semibold text-ink-strong">
+                  Last 7 days
+                </h2>
+                <div className="mt-6 h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e6e8ee" />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#6b7484", fontSize: 12 }}
+                        dy={8}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#6b7484", fontSize: 12 }}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#ffffff",
+                          borderRadius: "10px",
+                          border: "1px solid #e6e8ee",
+                          boxShadow: "0 12px 32px rgba(11,14,20,0.08)",
+                          fontSize: 13,
+                        }}
+                        labelStyle={{ color: "#0b0e14", fontWeight: 600 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Messages"
+                        stroke="#4f46e5"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 5, strokeWidth: 0, fill: "#4f46e5" }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Leads"
+                        stroke="#0f8a5f"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 5, strokeWidth: 0, fill: "#0f8a5f" }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-xs)]">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface-muted px-6 py-4">
+                  <div>
+                    <h2 className="text-[15px] font-semibold text-ink-strong">
+                      Recent conversations
+                    </h2>
+                    <p className="mt-0.5 text-[13px] text-ink-muted">
+                      Exactly how the AI handled each customer query.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const csvContent =
+                        "data:text/csv;charset=utf-8,Session ID,Role,Message\n" +
+                        Object.entries(chatSessions)
+                          .flatMap(([sId, msgs]) =>
+                            msgs.map(
+                              (m) => `${sId},${m.role},"${m.content.replace(/"/g, '""')}"`
+                            )
+                          )
+                          .join("\n");
+                      const link = document.createElement("a");
+                      link.setAttribute("href", encodeURI(csvContent));
+                      link.setAttribute("download", `chat_logs_${botId}.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                    }}
+                    disabled={sessionCount === 0}
+                    className="inline-flex items-center gap-2 rounded-lg border border-line-strong bg-white px-4 py-2 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-50"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export logs
+                  </button>
+                </div>
+
+                {sessionCount === 0 ? (
+                  <EmptyState
+                    icon={<MessageSquare className="h-7 w-7" />}
+                    title="No conversations yet"
+                    body="Once visitors start chatting with your widget, transcripts appear here."
+                  />
+                ) : (
+                  <div className="divide-y divide-line">
                     {Object.entries(chatSessions).map(([sessionId, msgs]) => (
-                      <div key={sessionId} className="p-6 hover:bg-white/5 transition-colors">
-                        <div className="flex items-center gap-4 mb-6">
-                          <div className="h-10 w-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 border border-white/5">
-                            <User className="w-5 h-5" />
-                          </div>
+                      <div key={sessionId} className="p-6">
+                        <div className="mb-4 flex items-center gap-3">
+                          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-muted text-ink-muted">
+                            <User className="h-[18px] w-[18px]" />
+                          </span>
                           <div>
-                            <div className="text-sm font-bold text-white font-mono">{sessionId.substring(0,8)}...</div>
-                            <div className="text-xs font-bold text-indigo-400 mt-1">{msgs.length} messages</div>
+                            <p className="font-mono text-[13px] font-medium text-ink-strong">
+                              {sessionId.substring(0, 8)}…
+                            </p>
+                            <p className="text-[12px] text-ink-muted">
+                              {msgs.length} message{msgs.length === 1 ? "" : "s"}
+                            </p>
                           </div>
                         </div>
-                        <div className="space-y-4 bg-slate-900 border border-white/5 rounded-2xl p-5 shadow-inner max-h-[300px] overflow-y-auto">
+                        <div className="ds-scrollbar max-h-[300px] space-y-3 overflow-y-auto rounded-xl border border-line bg-surface-muted p-4">
                           {msgs.map((msg, idx) => (
-                            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`px-5 py-3 rounded-2xl text-sm max-w-[85%] shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-slate-800 text-slate-200 rounded-bl-sm border border-white/5'}`}>
+                            <div
+                              key={idx}
+                              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                            >
+                              <div
+                                className={
+                                  msg.role === "user"
+                                    ? "max-w-[85%] rounded-2xl rounded-br-md bg-accent px-4 py-2.5 text-sm leading-relaxed text-white"
+                                    : "max-w-[85%] rounded-2xl rounded-bl-md border border-line bg-white px-4 py-2.5 text-sm leading-relaxed text-ink"
+                                }
+                              >
                                 {msg.content}
                               </div>
                             </div>
@@ -670,122 +938,284 @@ export default function BotManagementPage() {
                 )}
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* TAB 4: LEADS */}
-        {activeTab === "leads" && (
-          <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg overflow-hidden">
-             <div className="p-6 border-b border-white/10 flex items-center justify-between bg-slate-900/80">
-              <div>
-                <h2 className="text-xl font-bold text-white tracking-tight">Captured Leads</h2>
-                <p className="text-sm text-slate-400 font-medium mt-1">Export your captured emails to your CRM.</p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="bg-indigo-500/10 text-indigo-400 font-bold px-4 py-2 rounded-xl text-sm border border-indigo-500/20">
-                  {leads.length} Leads
-                </div>
-                <button 
-                  onClick={handleExportCSV}
-                  disabled={leads.length === 0}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-[0_0_15px_rgba(79,70,229,0.2)] hover:shadow-[0_0_25px_rgba(79,70,229,0.4)] disabled:opacity-50"
-                >
-                  <Download className="w-4 h-4" /> Export CSV
-                </button>
-              </div>
-            </div>
-            
-            {leads.length === 0 ? (
-              <div className="p-16 text-center bg-slate-950/50">
-                <div className="w-16 h-16 bg-slate-800 border border-white/5 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                  <Mail className="w-8 h-8 text-slate-500" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">No leads yet</h3>
-                <p className="text-slate-400 font-medium">Once users enter their email in the widget, they will appear here.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto bg-slate-950/50">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-900/80 border-b border-white/10">
-                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">User</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Date Captured</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {leads.map((lead) => (
-                      <tr key={lead.id} className="hover:bg-white/5 transition-colors group">
-                        <td className="px-6 py-5">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-blue-500/20 flex items-center justify-center text-indigo-400 font-bold text-sm border border-indigo-500/20 shadow-inner">
-                            {lead.email.charAt(0).toUpperCase()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-5 font-bold text-white tracking-wide">{lead.email}</td>
-                        <td className="px-6 py-5 text-sm font-medium text-slate-400">{new Date(lead.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                        <td className="px-6 py-5">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            Captured
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 5: SETTINGS */}
-        {activeTab === "settings" && (
-          <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 shadow-lg overflow-hidden max-w-2xl">
-            <div className="p-6 border-b border-white/10 bg-slate-900/80">
-              <h2 className="text-xl font-bold text-white tracking-tight">Integrations & Whitelabel</h2>
-              <p className="text-sm text-slate-400 font-medium mt-1">Configure premium enterprise features.</p>
-            </div>
-            
-            <div className="p-8 space-y-8 bg-slate-950/50">
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-2">Webhook URL (Zapier, Make, etc)</label>
-                <p className="text-xs text-slate-500 font-medium mb-3">We will fire a POST request to this URL whenever a lead is captured.</p>
-                <input 
-                  type="text" 
-                  value={webhookUrl} 
-                  onChange={e => setWebhookUrl(e.target.value)} 
-                  placeholder="https://hooks.zapier.com/hooks/catch/..."
-                  className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-900/80 text-white placeholder-slate-600 transition-all shadow-inner"
-                />
-              </div>
-
-              <div className="flex items-center justify-between border-t border-white/10 pt-8">
+          {/* --------------------------- LEADS -------------------------- */}
+          {activeTab === "leads" && (
+            <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-xs)]">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface-muted px-6 py-4">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-300">Remove Branding (Whitelabel)</h3>
-                  <p className="text-xs text-slate-500 font-medium mt-1">Hide the "Powered by ChatBot Config" watermark on your widget.</p>
+                  <h2 className="text-[15px] font-semibold text-ink-strong">
+                    Captured leads
+                  </h2>
+                  <p className="mt-0.5 text-[13px] text-ink-muted">
+                    Emails collected inside conversations.
+                  </p>
                 </div>
-                <button 
-                  onClick={() => setRemoveBranding(!removeBranding)}
-                  className={`w-14 h-7 rounded-full transition-colors relative flex items-center shadow-inner border ${removeBranding ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-white/10'}`}
-                >
-                  <div className={`w-5 h-5 bg-white rounded-full absolute transition-transform shadow-md ${removeBranding ? 'translate-x-8' : 'translate-x-1'}`}></div>
-                </button>
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-accent-soft px-3 py-1 text-[13px] font-semibold text-accent-ink">
+                    {leads.length} total
+                  </span>
+                  <button
+                    onClick={handleExportCSV}
+                    disabled={leads.length === 0}
+                    className="inline-flex items-center gap-2 rounded-lg border border-line-strong bg-white px-4 py-2 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-50"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export CSV
+                  </button>
+                </div>
               </div>
 
-              <div className="border-t border-white/10 pt-8 flex justify-end">
-                <button 
-                  onClick={handleSavePremiumSettings}
-                  disabled={isSavingPremium}
-                  className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.2)] hover:shadow-[0_0_25px_rgba(79,70,229,0.4)]"
-                >
-                  {isSavingPremium ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                  Save Premium Settings
-                </button>
+              {leads.length === 0 ? (
+                <EmptyState
+                  icon={<Mail className="h-7 w-7" />}
+                  title="No leads yet"
+                  body="When a visitor shares their email in the widget, they'll show up here."
+                />
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-line bg-surface-muted">
+                        <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                          Email address
+                        </th>
+                        <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                          Captured
+                        </th>
+                        <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {leads.map((lead) => {
+                        const when = lead.captured_at || lead.created_at;
+                        return (
+                          <tr key={lead.id} className="transition-colors hover:bg-surface-muted/60">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-[13px] font-semibold text-accent-ink">
+                                  {lead.email.charAt(0).toUpperCase()}
+                                </span>
+                                <span className="text-sm font-medium text-ink-strong">
+                                  {lead.email}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-ink-muted">
+                              {when
+                                ? new Date(when).toLocaleDateString("en-GB", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "—"}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-positive-soft px-2.5 py-1 text-[12px] font-semibold text-positive">
+                                <Check className="h-3 w-3" />
+                                Captured
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ------------------------- INTEGRATIONS --------------------- */}
+          {activeTab === "settings" && (
+            <div className="max-w-2xl overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-xs)]">
+              <div className="border-b border-line bg-surface-muted px-6 py-4">
+                <h2 className="text-[15px] font-semibold text-ink-strong">
+                  Integrations & white-label
+                </h2>
+                <p className="mt-0.5 text-[13px] text-ink-muted">
+                  Connect this bot to the rest of your stack.
+                </p>
+              </div>
+
+              <div className="divide-y divide-line">
+                <div className="p-6">
+                  <label className="ds-label">Webhook URL</label>
+                  <p className="mb-3 text-[13px] text-ink-muted">
+                    We fire a POST request to this URL whenever a lead is captured —
+                    works with Zapier, Make and HubSpot.
+                  </p>
+                  <input
+                    type="text"
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
+                    placeholder="https://hooks.zapier.com/hooks/catch/…"
+                    className="ds-input font-mono text-[13px]"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-6 p-6">
+                  <div>
+                    <h3 className="text-sm font-semibold text-ink-strong">
+                      Remove branding
+                    </h3>
+                    <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
+                      Hide the “Powered by ChatBot Config” watermark on your widget.
+                    </p>
+                  </div>
+                  <button
+                    role="switch"
+                    aria-checked={removeBranding}
+                    onClick={() => setRemoveBranding(!removeBranding)}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                      removeBranding ? "bg-accent" : "bg-line-strong"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-[var(--shadow-sm)] transition-transform ${
+                        removeBranding ? "translate-x-[22px]" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="flex justify-end bg-surface-muted px-6 py-4">
+                  <button
+                    onClick={handleSavePremiumSettings}
+                    disabled={isSavingPremium}
+                    className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover disabled:opacity-60"
+                  >
+                    {isSavingPremium ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    Save settings
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------- Small building blocks ------------------------ */
+
+function Card({
+  icon,
+  title,
+  subtitle,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-line bg-white p-6 shadow-[var(--shadow-xs)]">
+      <div className="flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+          {icon}
+        </span>
+        <div>
+          <h2 className="text-[15px] font-semibold text-ink-strong">{title}</h2>
+          <p className="mt-0.5 text-[13px] leading-relaxed text-ink-muted">
+            {subtitle}
+          </p>
+        </div>
+      </div>
+      <div className="mt-5">{children}</div>
+    </section>
+  );
+}
+
+function StatusNote({ text }: { text: string }) {
+  if (!text) return null;
+  const isError = text.toLowerCase().includes("error");
+  return (
+    <p
+      className={
+        isError
+          ? "mt-3 rounded-lg border border-danger/20 bg-danger-soft px-3 py-2 text-[13px] text-danger"
+          : "mt-3 rounded-lg border border-positive/20 bg-positive-soft px-3 py-2 text-[13px] text-positive"
+      }
+    >
+      {text}
+    </p>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  icon,
+  accent = false,
+}: {
+  label: string;
+  value: React.ReactNode;
+  icon: React.ReactNode;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={
+        accent
+          ? "rounded-2xl border border-accent/25 bg-accent-soft p-5"
+          : "rounded-2xl border border-line bg-white p-5 shadow-[var(--shadow-xs)]"
+      }
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] font-medium text-ink-muted">{label}</p>
+        <span
+          className={
+            accent
+              ? "flex h-8 w-8 items-center justify-center rounded-lg bg-white/70 text-accent"
+              : "flex h-8 w-8 items-center justify-center rounded-lg bg-surface-muted text-ink-muted"
+          }
+        >
+          {icon}
+        </span>
+      </div>
+      <p
+        className={
+          accent
+            ? "mt-4 text-3xl font-semibold tracking-tight text-accent-ink"
+            : "mt-4 text-3xl font-semibold tracking-tight text-ink-strong"
+        }
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  body,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="px-8 py-16 text-center">
+      <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-muted text-ink-faint">
+        {icon}
+      </span>
+      <h3 className="mt-5 text-[15px] font-semibold text-ink-strong">{title}</h3>
+      <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-ink-muted">
+        {body}
+      </p>
     </div>
   );
 }

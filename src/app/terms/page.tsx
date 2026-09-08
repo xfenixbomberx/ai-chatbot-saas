@@ -1,33 +1,41 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import LegalPage from "@/components/LegalPage";
+
+export const metadata = {
+  title: "Terms of Service | ChatBot Config",
+  description: "The terms that govern your use of the ChatBot Config platform.",
+};
 
 export default function TermsOfService() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 mb-6">
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back to Home
-        </Link>
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Terms of Service</h1>
-        <div className="prose prose-blue text-gray-600 space-y-4">
-          <p>Last updated: {new Date().toLocaleDateString()}</p>
-          
-          <h2 className="text-xl font-bold text-gray-900 mt-6">1. Acceptance of Terms</h2>
-          <p>By accessing or using our AI Chatbot SaaS platform ("the Service"), you agree to be bound by these Terms. If you disagree with any part of the terms, you may not access the Service.</p>
-          
-          <h2 className="text-xl font-bold text-gray-900 mt-6">2. Subscriptions & Billing</h2>
-          <p>The Service is billed on a subscription basis. You will be billed in advance on a recurring, periodic basis. Payments are processed securely via Stripe. We reserve the right to modify our pricing at any time, with reasonable advance notice.</p>
-
-          <h2 className="text-xl font-bold text-gray-900 mt-6">3. Acceptable Use</h2>
-          <p>You agree not to use the Service to generate malicious, illegal, or harmful content. You are responsible for the data you use to train your chatbots and must ensure you have the legal right to use such data.</p>
-
-          <h2 className="text-xl font-bold text-gray-900 mt-6">4. Limitation of Liability</h2>
-          <p>In no event shall our company, directors, employees, or partners be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.</p>
-
-          <h2 className="text-xl font-bold text-gray-900 mt-6">5. Changes to Terms</h2>
-          <p>We reserve the right to modify or replace these Terms at any time. By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms.</p>
-        </div>
-      </div>
-    </div>
+    <LegalPage
+      title="Terms of Service"
+      intro="The agreement between you and ChatBot Config covering use of the platform, billing and acceptable use."
+      sections={[
+        {
+          heading: "Acceptance of terms",
+          body: 'By accessing or using our AI chatbot platform ("the Service"), you agree to be bound by these Terms. If you disagree with any part of them, you may not access the Service.',
+        },
+        {
+          heading: "Subscriptions & billing",
+          body: "The Service is billed on a subscription basis. You are billed in advance on a recurring, periodic basis, and payments are processed securely via Stripe. You may cancel or change your plan at any time from the customer portal in your dashboard. We reserve the right to modify our pricing with reasonable advance notice.",
+        },
+        {
+          heading: "Acceptable use",
+          body: "You agree not to use the Service to generate malicious, illegal or harmful content. You are responsible for the data you use to train your chatbots and must ensure you hold the legal right to use it.",
+        },
+        {
+          heading: "Availability",
+          body: "We work to keep the Service available and performant, but we do not warrant uninterrupted or error-free operation. Planned maintenance will be communicated in advance where practical.",
+        },
+        {
+          heading: "Limitation of liability",
+          body: "In no event shall our company, its directors, employees or partners be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation loss of profits, data, use or goodwill, resulting from your access to, use of, or inability to use the Service.",
+        },
+        {
+          heading: "Changes to these terms",
+          body: "We reserve the right to modify or replace these Terms at any time. By continuing to access or use the Service after revisions take effect, you agree to be bound by the revised terms.",
+        },
+      ]}
+    />
   );
 }

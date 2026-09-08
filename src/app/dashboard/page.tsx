@@ -2,10 +2,62 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Plus, Bot, Globe, X, Trash2, CheckCircle2, Shield, RefreshCw } from "lucide-react";
+import {
+  Plus,
+  Bot,
+  Globe,
+  X,
+  Trash2,
+  Check,
+  ShieldCheck,
+  RefreshCw,
+  Loader2,
+  ArrowRight,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+
+const PLANS = [
+  {
+    name: "Starter",
+    price: "£49",
+    tagline: "One site, covered after hours.",
+    env: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER,
+    fallback: "price_1UCk2WLuviuLNWsXWEayNFDA",
+    features: ["1 AI chatbot", "Website crawling & training", "Lead capture", "Standard analytics"],
+    featured: false,
+  },
+  {
+    name: "Pro",
+    price: "£99",
+    tagline: "For teams running a few properties.",
+    env: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO,
+    fallback: "price_1UCk3aLuviuLNWsXFQApelRq",
+    features: [
+      "3 AI chatbots",
+      "Unlimited retraining",
+      "Custom branding & colours",
+      "PDF document upload",
+      "Live agent handoff",
+    ],
+    featured: true,
+  },
+  {
+    name: "Enterprise",
+    price: "£299",
+    tagline: "Agencies and multi-brand rollouts.",
+    env: process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE,
+    fallback: "price_1UCk4hLuviuLNWsX44ndHMEj",
+    features: [
+      "10 AI chatbots",
+      'White-label — no "powered by"',
+      "Webhooks & CRM integrations",
+      "Dedicated account manager",
+      "Priority support",
+    ],
+    featured: false,
+  },
+];
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -16,32 +68,33 @@ export default function DashboardPage() {
   const [botIcon, setBotIcon] = useState("bot");
   const [isLoading, setIsLoading] = useState(false);
   const [isTrainingAll, setIsTrainingAll] = useState(false);
-  
+
   const [bots, setBots] = useState<any[]>([]);
   const [isFetching, setIsFetching] = useState(true);
   const [user, setUser] = useState<any>(null);
-  
-  // Paywall State
+
   const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
 
   useEffect(() => {
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
-        window.location.href = '/login';
+        window.location.href = "/login";
         return;
       }
       setUser(session.user);
-      
+
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get("success") === "true") {
-        await fetch('/api/success', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: session.user.id })
+        await fetch("/api/success", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: session.user.id }),
         });
-        router.replace('/dashboard');
+        router.replace("/dashboard");
         setIsSubscribed(true);
         fetchBots(session.user.id);
         return;
@@ -52,7 +105,7 @@ export default function DashboardPage() {
         .select("is_subscribed")
         .eq("id", session.user.id)
         .single();
-        
+
       const hasPaid = profile?.is_subscribed || false;
       setIsSubscribed(hasPaid);
 
@@ -72,7 +125,7 @@ export default function DashboardPage() {
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
-      
+
     if (data) setBots(data);
     setIsFetching(false);
   };
@@ -80,10 +133,10 @@ export default function DashboardPage() {
   const handleCheckout = async (priceId: string) => {
     setIsCheckoutLoading(true);
     try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, email: user.email, priceId })
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, email: user.email, priceId }),
       });
       const data = await res.json();
       if (data.url) {
@@ -92,7 +145,7 @@ export default function DashboardPage() {
         alert("Error: " + data.error);
         setIsCheckoutLoading(false);
       }
-    } catch (e) {
+    } catch {
       alert("Failed to connect to checkout.");
       setIsCheckoutLoading(false);
     }
@@ -102,7 +155,7 @@ export default function DashboardPage() {
     if (!bots || bots.length === 0) return;
     setIsTrainingAll(true);
     let successCount = 0;
-    
+
     for (const bot of bots) {
       if (bot.website_url) {
         try {
@@ -117,7 +170,7 @@ export default function DashboardPage() {
         }
       }
     }
-    
+
     setIsTrainingAll(false);
     alert(`Successfully trained ${successCount} chatbots!`);
   };
@@ -128,16 +181,23 @@ export default function DashboardPage() {
     setIsLoading(true);
 
     let formattedUrl = websiteUrl.trim();
-    if (formattedUrl && !formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
+    if (
+      formattedUrl &&
+      !formattedUrl.startsWith("http://") &&
+      !formattedUrl.startsWith("https://")
+    ) {
       formattedUrl = "https://" + formattedUrl;
     }
 
-    const { data, error } = await supabase
-      .from("chatbots")
-      .insert([{ 
-        name: botName, website_url: formattedUrl, user_id: user.id,
-        primary_color: botColor, icon: botIcon
-      }]);
+    const { error } = await supabase.from("chatbots").insert([
+      {
+        name: botName,
+        website_url: formattedUrl,
+        user_id: user.id,
+        primary_color: botColor,
+        icon: botIcon,
+      },
+    ]);
 
     setIsLoading(false);
 
@@ -175,244 +235,318 @@ export default function DashboardPage() {
   const handleDeleteBot = async (e: React.MouseEvent, botId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this chatbot? This action cannot be undone.")) return;
+    if (!confirm("Delete this chatbot? This cannot be undone.")) return;
 
     const { error } = await supabase.from("chatbots").delete().eq("id", botId);
     if (error) alert("Error deleting chatbot: " + error.message);
     else fetchBots(user.id);
   };
 
+  /* ------------------------------ Loading ----------------------------- */
+
   if (isSubscribed === null) {
-    return <div className="p-8 text-slate-400">Loading your dashboard...</div>;
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="flex items-center gap-3 text-sm text-ink-muted">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading your dashboard…
+        </div>
+      </div>
+    );
   }
 
-  // PAYWALL UI
+  /* ------------------------------ Paywall ----------------------------- */
+
   if (!isSubscribed) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh] p-4 lg:p-8 relative">
-        <div className="text-center mb-16 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-semibold mb-6">
-            <Shield className="w-4 h-4" /> Secure Stripe Checkout
-          </div>
-          <h1 className="text-4xl font-black text-white mb-4 tracking-tight">Select your plan</h1>
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto font-light">
-            Get full access to the ChatBot Config platform. Upgrade your customer support with 24/7 automated agents.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto w-full relative z-10 items-center">
-          {/* Starter Plan */}
-          <div className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-3xl border border-white/10 flex flex-col transition-all duration-500 hover:-translate-y-2 hover:border-indigo-500/30 group">
-            <h3 className="text-2xl font-bold text-slate-300 mb-2">Starter</h3>
-            <div className="text-4xl font-extrabold text-white mb-6">£49<span className="text-lg text-slate-500 font-medium">/mo</span></div>
-            <ul className="text-left space-y-4 mb-8 flex-1">
-              <li className="flex items-center text-slate-300"><CheckCircle2 className="w-5 h-5 text-indigo-500 mr-3 shrink-0" /> 1 AI Chatbot</li>
-              <li className="flex items-center text-slate-300"><CheckCircle2 className="w-5 h-5 text-indigo-500 mr-3 shrink-0" /> Basic Website Scraping</li>
-              <li className="flex items-center text-slate-300"><CheckCircle2 className="w-5 h-5 text-indigo-500 mr-3 shrink-0" /> Standard Analytics</li>
-            </ul>
-            <button
-              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "price_1UCk2WLuviuLNWsXWEayNFDA")}
-              disabled={isCheckoutLoading}
-              className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 py-3.5 rounded-xl font-bold transition-all group-hover:scale-[1.02]"
-            >
-              Get Starter
-            </button>
+      <div className="px-6 py-14 lg:px-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-[13px] font-medium text-ink-muted">
+              <ShieldCheck className="h-3.5 w-3.5 text-positive" />
+              Secure checkout by Stripe
+            </span>
+            <h1 className="mt-6 text-4xl font-semibold tracking-[-0.03em] text-ink-strong">
+              Choose your plan
+            </h1>
+            <p className="mt-4 text-lg leading-relaxed text-ink-muted">
+              Pick a plan to unlock chatbot creation. Upgrade, downgrade or cancel
+              from your dashboard at any time.
+            </p>
           </div>
 
-          {/* Pro Plan */}
-          <div className="bg-gradient-to-b from-indigo-600 to-blue-700 p-8 rounded-3xl shadow-[0_0_40px_rgba(99,102,241,0.2)] border border-indigo-400/30 flex flex-col relative transform md:-translate-y-4 transition-all duration-500 hover:-translate-y-6 group">
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-cyan-400 to-blue-400 text-white px-4 py-1 rounded-full text-sm font-bold shadow-md">
-              MOST POPULAR
-            </div>
-            <h3 className="text-2xl font-bold text-indigo-100 mb-2">Pro</h3>
-            <div className="text-4xl font-extrabold text-white mb-6">£99<span className="text-lg text-indigo-300 font-medium">/mo</span></div>
-            <ul className="text-left space-y-4 mb-8 flex-1 text-white">
-              <li className="flex items-center"><CheckCircle2 className="w-5 h-5 text-cyan-300 mr-3 shrink-0" /> 3 AI Chatbots</li>
-              <li className="flex items-center"><CheckCircle2 className="w-5 h-5 text-cyan-300 mr-3 shrink-0" /> Unlimited AI Training</li>
-              <li className="flex items-center"><CheckCircle2 className="w-5 h-5 text-cyan-300 mr-3 shrink-0" /> Custom Branding & Colors</li>
-              <li className="flex items-center"><CheckCircle2 className="w-5 h-5 text-cyan-300 mr-3 shrink-0" /> PDF Document Upload</li>
-            </ul>
-            <button
-              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "price_1UCk3aLuviuLNWsXFQApelRq")}
-              disabled={isCheckoutLoading}
-              className="w-full bg-white hover:bg-slate-100 text-indigo-700 py-3.5 rounded-xl font-bold transition-all shadow-sm group-hover:scale-[1.02]"
-            >
-              Get Pro
-            </button>
-          </div>
+          <div className="mt-14 grid items-start gap-6 lg:grid-cols-3">
+            {PLANS.map((plan) => (
+              <div
+                key={plan.name}
+                className={
+                  plan.featured
+                    ? "relative rounded-2xl border-2 border-accent bg-white p-8 shadow-[var(--shadow-lg)] lg:-mt-4"
+                    : "relative rounded-2xl border border-line bg-white p-8 shadow-[var(--shadow-xs)]"
+                }
+              >
+                {plan.featured && (
+                  <span className="absolute -top-3 left-8 rounded-full bg-accent px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-white">
+                    Most popular
+                  </span>
+                )}
+                <h3 className="text-lg font-semibold text-ink-strong">{plan.name}</h3>
+                <p className="mt-1.5 text-sm text-ink-muted">{plan.tagline}</p>
+                <p className="mt-6 flex items-baseline gap-1">
+                  <span className="text-4xl font-semibold tracking-tight text-ink-strong">
+                    {plan.price}
+                  </span>
+                  <span className="text-sm font-medium text-ink-muted">/month</span>
+                </p>
 
-          {/* Enterprise Plan */}
-          <div className="bg-slate-900/50 backdrop-blur-xl p-8 rounded-3xl border border-white/10 flex flex-col transition-all duration-500 hover:-translate-y-2 hover:border-slate-500/30 group">
-            <h3 className="text-2xl font-bold text-slate-300 mb-2">Enterprise</h3>
-            <div className="text-4xl font-extrabold text-white mb-6">£299<span className="text-lg text-slate-500 font-medium">/mo</span></div>
-            <ul className="text-left space-y-4 mb-8 flex-1">
-              <li className="flex items-center text-slate-300"><CheckCircle2 className="w-5 h-5 text-slate-400 mr-3 shrink-0" /> 10 AI Chatbots</li>
-              <li className="flex items-center text-slate-300"><CheckCircle2 className="w-5 h-5 text-slate-400 mr-3 shrink-0" /> Remove "Powered By" Watermark</li>
-              <li className="flex items-center text-slate-300"><CheckCircle2 className="w-5 h-5 text-slate-400 mr-3 shrink-0" /> Dedicated Account Manager</li>
-              <li className="flex items-center text-slate-300"><CheckCircle2 className="w-5 h-5 text-slate-400 mr-3 shrink-0" /> Priority Support</li>
-            </ul>
-            <button
-              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE || "price_1UCk4hLuviuLNWsX44ndHMEj")}
-              disabled={isCheckoutLoading}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3.5 rounded-xl font-bold transition-all group-hover:scale-[1.02]"
-            >
-              Get Enterprise
-            </button>
+                <button
+                  onClick={() => handleCheckout(plan.env || plan.fallback)}
+                  disabled={isCheckoutLoading}
+                  className={
+                    plan.featured
+                      ? "mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover disabled:opacity-60"
+                      : "mt-7 flex w-full items-center justify-center gap-2 rounded-xl border border-line-strong bg-white px-5 py-3 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-60"
+                  }
+                >
+                  {isCheckoutLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      Choose {plan.name}
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+
+                <ul className="mt-7 space-y-3 border-t border-line pt-7">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex gap-3 text-[15px] text-ink">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
       </div>
     );
   }
 
-  // NORMAL DASHBOARD UI
+  /* ---------------------------- Normal state -------------------------- */
+
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-10">
-        <div>
-          <h1 className="text-3xl font-black text-white tracking-tight">My Chatbots</h1>
-          <p className="text-slate-400 mt-1 font-medium">Manage and train your AI assistants.</p>
+    <div className="px-6 py-8 lg:px-10">
+      <div className="mx-auto max-w-6xl">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-[-0.02em] text-ink-strong">
+              My chatbots
+            </h1>
+            <p className="mt-1 text-[15px] text-ink-muted">
+              {bots.length === 0
+                ? "Create your first assistant to get started."
+                : `${bots.length} assistant${bots.length === 1 ? "" : "s"} · manage and retrain them here.`}
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleTrainAll}
+              disabled={isTrainingAll || bots.length === 0}
+              className="inline-flex items-center gap-2 rounded-lg border border-line-strong bg-white px-4 py-2.5 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${isTrainingAll ? "animate-spin" : ""}`} />
+              {isTrainingAll ? "Training…" : "Retrain all"}
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover"
+            >
+              <Plus className="h-4 w-4" />
+              New chatbot
+            </button>
+          </div>
         </div>
-        <div className="flex gap-4">
-          <button
-            onClick={handleTrainAll}
-            disabled={isTrainingAll || bots.length === 0}
-            className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 px-5 py-2.5 rounded-xl font-bold transition-all flex items-center"
-          >
-            <RefreshCw className={`w-5 h-5 mr-2 ${isTrainingAll ? "animate-spin" : ""}`} />
-            {isTrainingAll ? "Training All..." : "Train All"}
-          </button>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(79,70,229,0.2)] hover:shadow-[0_0_25px_rgba(79,70,229,0.4)] flex items-center"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Create Chatbot
-          </button>
+
+        <div className="mt-8">
+          {isFetching ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="h-[148px] animate-pulse rounded-2xl border border-line bg-white"
+                />
+              ))}
+            </div>
+          ) : bots.length === 0 ? (
+            <div className="ds-dots rounded-2xl border border-dashed border-line-strong bg-white px-8 py-20 text-center">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+                <Bot className="h-7 w-7" />
+              </span>
+              <h3 className="mt-6 text-lg font-semibold text-ink-strong">
+                No chatbots yet
+              </h3>
+              <p className="mx-auto mt-2 max-w-sm text-[15px] leading-relaxed text-ink-muted">
+                Point one at your website and it will be trained and ready to embed
+                in about a minute.
+              </p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover"
+              >
+                <Plus className="h-4 w-4" />
+                Create your first chatbot
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {bots.map((bot) => (
+                <Link
+                  href={`/dashboard/bot/${bot.id}`}
+                  key={bot.id}
+                  className="group relative rounded-2xl border border-line bg-white p-5 shadow-[var(--shadow-xs)] transition-all hover:-translate-y-0.5 hover:border-line-strong hover:shadow-[var(--shadow-md)]"
+                >
+                  <button
+                    onClick={(e) => handleDeleteBot(e, bot.id)}
+                    className="absolute right-3 top-3 rounded-lg p-1.5 text-ink-faint opacity-0 transition-all hover:bg-danger-soft hover:text-danger group-hover:opacity-100"
+                    title="Delete chatbot"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+
+                  <div className="flex items-center gap-3 pr-8">
+                    <span
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-base font-semibold text-white"
+                      style={{ backgroundColor: bot.primary_color || "#4f46e5" }}
+                    >
+                      {bot.name?.charAt(0)?.toUpperCase()}
+                    </span>
+                    <h3 className="truncate text-[15px] font-semibold text-ink-strong">
+                      {bot.name}
+                    </h3>
+                  </div>
+
+                  <div className="mt-5 flex items-center gap-2 rounded-lg border border-line bg-surface-muted px-3 py-2">
+                    <Globe className="h-3.5 w-3.5 shrink-0 text-ink-faint" />
+                    <span className="truncate font-mono text-[12px] text-ink-muted">
+                      {bot.website_url?.replace(/^https?:\/\//, "") || "No URL"}
+                    </span>
+                  </div>
+
+                  <span className="mt-4 flex items-center gap-1 text-[13px] font-semibold text-accent">
+                    Open
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {isFetching ? (
-        <div className="text-slate-500">Loading your bots...</div>
-      ) : bots.length === 0 ? (
-        <div className="bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-16 text-center shadow-2xl">
-          <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Bot className="w-10 h-10 text-slate-400" />
-          </div>
-          <h3 className="text-xl font-bold text-white mb-2">No chatbots yet</h3>
-          <p className="text-slate-400 mb-6 max-w-sm mx-auto">Create your first AI assistant to get started automating your customer support.</p>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors"
-          >
-            Create one now &rarr;
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {bots.map((bot) => (
-            <Link href={`/dashboard/bot/${bot.id}`} key={bot.id} className="block">
-              <div className="group relative bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-indigo-500/30 hover:bg-slate-800/50 transition-all cursor-pointer">
-                <button
-                  onClick={(e) => handleDeleteBot(e, bot.id)}
-                  className="absolute top-4 right-4 text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Delete Chatbot"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-                <div className="flex items-center mb-6 pr-6">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-lg" style={{ backgroundColor: bot.primary_color || '#4f46e5' }}>
-                    {bot.name.charAt(0)}
-                  </div>
-                  <h3 className="text-xl font-bold text-white ml-4 truncate">{bot.name}</h3>
-                </div>
-                <div className="text-sm text-slate-400 flex items-center bg-slate-950/50 rounded-lg p-2 border border-white/5">
-                  <Globe className="w-4 h-4 mr-2 text-indigo-400 shrink-0" />
-                  <span className="truncate font-mono">{bot.website_url}</span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* Modal */}
+      {/* ------------------------------ Modal ------------------------------ */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-md p-8 shadow-2xl">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold text-white">New Chatbot</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-white transition-colors bg-white/5 p-2 rounded-full">
-                <X className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-ink-strong/35 backdrop-blur-sm"
+            onClick={() => setIsModalOpen(false)}
+          />
+          <div className="ds-rise relative w-full max-w-md overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-xl)]">
+            <div className="flex items-center justify-between border-b border-line px-6 py-4">
+              <div>
+                <h2 className="text-[17px] font-semibold text-ink-strong">
+                  New chatbot
+                </h2>
+                <p className="mt-0.5 text-[13px] text-ink-muted">
+                  Training starts as soon as you create it.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink-strong"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             <form onSubmit={handleCreateBot}>
-              <div className="space-y-5 mb-8">
+              <div className="space-y-5 px-6 py-6">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">Bot Name</label>
+                  <label className="ds-label">Bot name</label>
                   <input
                     type="text"
                     required
                     value={botName}
                     onChange={(e) => setBotName(e.target.value)}
-                    placeholder="e.g. Acme Support AI"
-                    className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white bg-slate-950/50"
+                    placeholder="e.g. Acme Support"
+                    className="ds-input"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">Website URL to Scrape</label>
+                  <label className="ds-label">Website to train on</label>
                   <input
                     type="text"
                     required
                     value={websiteUrl}
                     onChange={(e) => setWebsiteUrl(e.target.value)}
-                    placeholder="e.g. www.chatbotconfig.uk"
-                    className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white bg-slate-950/50"
+                    placeholder="www.example.com"
+                    className="ds-input"
                   />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">Brand Color</label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="color"
-                      required
-                      value={botColor}
-                      onChange={(e) => setBotColor(e.target.value)}
-                      className="w-12 h-12 p-1 border border-white/10 bg-slate-950/50 rounded-lg cursor-pointer"
-                    />
-                    <span className="text-sm font-mono text-slate-400 bg-slate-950/50 px-3 py-1.5 rounded-lg border border-white/10">{botColor}</span>
-                  </div>
+                  <p className="mt-1.5 text-[13px] text-ink-faint">
+                    We&apos;ll crawl the pages we can reach from this address.
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">Widget Icon</label>
-                  <select
-                    value={botIcon}
-                    onChange={(e) => setBotIcon(e.target.value)}
-                    className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white bg-slate-950/50"
-                  >
-                    <option value="bot">Robot</option>
-                    <option value="message">Message Bubble</option>
-                    <option value="sparkles">Sparkles</option>
-                  </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="ds-label">Brand colour</label>
+                    <div className="flex items-center gap-2 rounded-lg border border-line-strong bg-white p-1.5">
+                      <input
+                        type="color"
+                        required
+                        value={botColor}
+                        onChange={(e) => setBotColor(e.target.value)}
+                        className="h-8 w-8 cursor-pointer rounded border-0 bg-transparent p-0"
+                      />
+                      <span className="font-mono text-[13px] uppercase text-ink-muted">
+                        {botColor}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="ds-label">Widget icon</label>
+                    <select
+                      value={botIcon}
+                      onChange={(e) => setBotIcon(e.target.value)}
+                      className="ds-input h-[46px]"
+                    >
+                      <option value="bot">Robot</option>
+                      <option value="message">Message bubble</option>
+                      <option value="sparkles">Sparkles</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3 border-t border-line bg-surface-muted px-6 py-4">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold transition-colors"
+                  className="flex-1 rounded-lg border border-line-strong bg-white px-4 py-2.5 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 disabled:text-indigo-300 text-white py-3 rounded-xl font-bold transition-colors shadow-[0_0_15px_rgba(79,70,229,0.2)]"
+                  className="flex flex-1 items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-accent)] transition-colors hover:bg-accent-hover disabled:opacity-60"
                 >
-                  {isLoading ? "Creating..." : "Create Chatbot"}
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create chatbot"}
                 </button>
               </div>
             </form>
