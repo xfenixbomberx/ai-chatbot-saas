@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatBot Config Handbook</title>
+<meta name="description" content="A step-by-step guide to setting up, training, and running your ChatBot Config AI chatbot.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #fbfaff;
+    --surface: #ffffff;
+    --surface-muted: #f3f1fa;
+    --surface-sunken: #ece8f7;
+    --ink-strong: #15121f;
+    --ink: #423f52;
+    --ink-muted: #7a7590;
+    --ink-faint: #a29dbb;
+    --line: #e7e2f3;
+    --line-strong: #d6cfea;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-soft: #eeedfc;
+    --accent-ink: #372fa6;
+    --success: #0f8a5f;
+    --success-soft: #e6f5ee;
+    --note: #b45309;
+    --note-soft: #fdf1df;
+    --code-bg: #14111f;
+    --code-line: #2a2540;
+    --code-text: #ece8f7;
+    --shadow-sm: 0 1px 2px rgba(21, 18, 31, 0.05), 0 1px 1px rgba(21, 18, 31, 0.04);
+    --shadow-md: 0 10px 30px rgba(21, 18, 31, 0.08), 0 2px 8px rgba(21, 18, 31, 0.04);
+    --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-body: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e0c17;
+      --surface: #16121f;
+      --surface-muted: #1c1729;
+      --surface-sunken: #221c33;
+      --ink-strong: #f5f3fc;
+      --ink: #cac4dd;
+      --ink-muted: #948daf;
+      --ink-faint: #675f80;
+      --line: #2a2440;
+      --line-strong: #382f52;
+      --accent: #7c72f0;
+      --accent-hover: #8f86f5;
+      --accent-soft: #241f3d;
+      --accent-ink: #c3bcf7;
+      --success: #3ed492;
+      --success-soft: #16281f;
+      --note: #f0b25e;
+      --note-soft: #2c2210;
+      --code-bg: #0a0812;
+      --code-line: #211c33;
+      --code-text: #e3dff2;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e0c17;
+    --surface: #16121f;
+    --surface-muted: #1c1729;
+    --surface-sunken: #221c33;
+    --ink-strong: #f5f3fc;
+    --ink: #cac4dd;
+    --ink-muted: #948daf;
+    --ink-faint: #675f80;
+    --line: #2a2440;
+    --line-strong: #382f52;
+    --accent: #7c72f0;
+    --accent-hover: #8f86f5;
+    --accent-soft: #241f3d;
+    --accent-ink: #c3bcf7;
+    --success: #3ed492;
+    --success-soft: #16281f;
+    --note: #f0b25e;
+    --note-soft: #2c2210;
+    --code-bg: #0a0812;
+    --code-line: #211c33;
+    --code-text: #e3dff2;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
+
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--font-display); color: var(--ink-strong); text-wrap: balance; margin: 0; }
+  a { color: var(--accent-ink); }
+  code, .mono { font-family: var(--font-mono); }
+
+  .shell { max-width: 1180px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* ---------- Header ---------- */
+  .topbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 22px 24px; border-bottom: 1px solid var(--line);
+  }
+  .mark {
+    width: 30px; height: 30px; border-radius: 9px; background: var(--accent);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+  }
+  .mark svg { width: 17px; height: 17px; }
+  .brand { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--ink-strong); letter-spacing: -0.01em; }
+  .brand-sub { font-size: 12.5px; color: var(--ink-faint); }
+
+  .hero {
+    padding: 56px 24px 40px; max-width: 1180px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: end;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 11.5px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink);
+    background: var(--accent-soft); border: 1px solid var(--line); border-radius: 999px;
+    padding: 5px 11px; margin-bottom: 16px;
+  }
+  .hero h1 { font-size: clamp(34px, 4.4vw, 50px); font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; }
+  .hero p { margin-top: 14px; max-width: 46ch; font-size: 17px; color: var(--ink-muted); }
+  .hero-meta { text-align: right; font-size: 13px; color: var(--ink-faint); line-height: 1.7; white-space: nowrap; }
+  .hero-meta strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Quickstart tracker ---------- */
+  .tracker-wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 8px; }
+  .tracker {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: var(--shadow-sm); overflow: hidden;
+  }
+  .tracker-step {
+    padding: 18px 16px; position: relative; border-right: 1px solid var(--line);
+  }
+  .tracker-step:last-child { border-right: none; }
+  .tracker-num {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--accent-ink);
+    display: block; margin-bottom: 6px;
+  }
+  .tracker-label { font-size: 13.5px; font-weight: 600; color: var(--ink-strong); }
+  .tracker-step::after {
+    content: ""; position: absolute; right: -1px; top: 50%; transform: translateY(-50%);
+    width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong);
+  }
+  .tracker-step:last-child::after { display: none; }
+
+  /* ---------- Layout: TOC + content ---------- */
+  .layout { display: grid; grid-template-columns: 240px 1fr; gap: 48px; margin-top: 48px; align-items: start; }
+  .toc { position: sticky; top: 24px; }
+  .toc-group { margin-bottom: 22px; }
+  .toc-group-label {
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; display: block;
+  }
+  .toc a {
+    display: block; font-size: 13.5px; font-weight: 500; color: var(--ink-muted);
+    text-decoration: none; padding: 6px 0 6px 14px; border-left: 2px solid var(--line);
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .toc a:hover { color: var(--ink-strong); }
+  .toc a.active { color: var(--accent-ink); border-left-color: var(--accent); font-weight: 600; }
+
+  .mobile-toc { display: none; }
+
+  /* ---------- Steps ---------- */
+  .step-section { margin-bottom: 8px; }
+  .section-head { margin-bottom: 28px; }
+  .section-head h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.015em; }
+  .section-head p { margin-top: 8px; color: var(--ink-muted); font-size: 15px; max-width: 60ch; }
+
+  .step {
+    display: grid; grid-template-columns: 40px 1fr; gap: 18px;
+    padding: 28px 0; border-top: 1px solid var(--line);
+  }
+  .step:first-of-type { border-top: none; padding-top: 4px; }
+  .step-num {
+    width: 40px; height: 40px; border-radius: 12px; background: var(--accent-soft);
+    color: var(--accent-ink); font-family: var(--font-display); font-weight: 700; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .step h3 { font-size: 17.5px; font-weight: 700; margin-bottom: 8px; }
+  .step > div > p { font-size: 15px; color: var(--ink); max-width: 62ch; }
+  .step ul { margin: 10px 0 0; padding-left: 18px; font-size: 14.5px; color: var(--ink); }
+  .step li { margin-bottom: 5px; }
+
+  .echo {
+    margin-top: 14px; padding: 12px 14px; background: var(--surface-muted);
+    border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0;
+    font-size: 13.5px; color: var(--ink); max-width: 58ch;
+  }
+  .echo .echo-label {
+    display: block; font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 4px;
+  }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+  .chip {
+    font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink);
+  }
+  .chip.accent { background: var(--accent-soft); border-color: transparent; color: var(--accent-ink); }
+
+  .icon-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .icon-pill {
+    display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500;
+    padding: 5px 10px 5px 6px; border-radius: 999px; background: var(--surface);
+    border: 1px solid var(--line); color: var(--ink-muted);
+  }
+  .icon-pill span { width: 20px; height: 20px; border-radius: 6px; background: var(--surface-sunken); display: flex; align-items: center; justify-content: center; }
+  .icon-pill svg { width: 12px; height: 12px; color: var(--ink-muted); }
+
+  /* Code block */
+  .code-card {
+    margin-top: 16px; border-radius: 12px; overflow: hidden; background: var(--code-bg);
+    box-shadow: var(--shadow-md); max-width: 62ch;
+  }
+  .code-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 14px; border-bottom: 1px solid var(--code-line);
+  }
+  .code-head span { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #948daf; }
+  .copy-btn {
+    font-family: var(--font-body); font-size: 12px; font-weight: 600; color: #e3dff2;
+    background: rgba(255,255,255,0.08); border: none; border-radius: 6px; padding: 5px 10px;
+    cursor: pointer; transition: background 0.15s ease;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,0.16); }
+  .copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  pre.code-body { margin: 0; padding: 14px 16px; overflow-x: auto; }
+  pre.code-body code { font-family: var(--font-mono); font-size: 13px; color: var(--code-text); line-height: 1.6; white-space: pre; }
+  .code-tag { color: #8f86f5; }
+  .code-attr { color: #3ed492; }
+  .code-str { color: #f0b25e; }
+
+  /* Note callouts */
+  .note {
+    display: flex; gap: 10px; margin-top: 14px; padding: 12px 14px;
+    background: var(--note-soft); border-radius: 10px; max-width: 60ch;
+  }
+  .note svg { width: 16px; height: 16px; color: var(--note); flex-shrink: 0; margin-top: 1px; }
+  .note p { font-size: 13.5px; color: var(--ink); }
+
+  /* ---------- Reference cards ---------- */
+  .ref-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 24px; }
+  .ref-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 22px; box-shadow: var(--shadow-sm);
+  }
+  .ref-card-icon {
+    width: 34px; height: 34px; border-radius: 10px; background: var(--accent-soft);
+    color: var(--accent-ink); display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+  }
+  .ref-card-icon svg { width: 17px; height: 17px; }
+  .ref-card h3 { font-size: 15.5px; font-weight: 700; margin-bottom: 6px; }
+  .ref-card p { font-size: 13.75px; color: var(--ink-muted); }
+  .ref-card .echo { margin-top: 12px; }
+
+  .role-table { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .role-row { display: grid; grid-template-columns: 90px 1fr; font-size: 12.75px; border-top: 1px solid var(--line); }
+  .role-row:first-child { border-top: none; }
+  .role-row .rname { padding: 8px 10px; font-weight: 700; color: var(--ink-strong); background: var(--surface-muted); }
+  .role-row .rdesc { padding: 8px 10px; color: var(--ink-muted); }
+
+  .plan-strip { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .plan-pill {
+    flex: 1; min-width: 130px; border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; background: var(--surface-muted);
+  }
+  .plan-pill .pname { font-size: 12.5px; font-weight: 700; color: var(--ink-strong); }
+  .plan-pill .pprice { font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--accent-ink); margin-top: 2px; }
+  .plan-pill .pfeat { font-size: 11.75px; color: var(--ink-faint); margin-top: 3px; }
+
+  /* Help footer */
+  .help-band {
+    margin-top: 56px; padding: 32px; border-radius: 18px;
+    background: var(--surface); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+    box-shadow: var(--shadow-sm);
+  }
+  .help-band h3 { font-size: 18px; font-weight: 700; }
+  .help-band p { font-size: 14px; color: var(--ink-muted); margin-top: 4px; }
+  .help-cta {
+    font-size: 13.5px; font-weight: 700; color: #fff; background: var(--accent);
+    padding: 10px 18px; border-radius: 10px; text-decoration: none; white-space: nowrap;
+    box-shadow: var(--shadow-sm); transition: background 0.15s ease;
+  }
+  .help-cta:hover { background: var(--accent-hover); }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { display: none; }
+    .mobile-toc {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-top: 32px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mobile-toc a {
+      flex-shrink: 0; font-size: 12.5px; font-weight: 600; color: var(--ink-muted);
+      background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+      padding: 7px 13px; text-decoration: none;
+    }
+    .hero { grid-template-columns: 1fr; }
+    .hero-meta { text-align: left; }
+    .tracker { grid-template-columns: repeat(2, 1fr); }
+    .tracker-step:nth-child(2n) { border-right: none; }
+    .ref-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="mark">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 3C7.03 3 3 6.58 3 11c0 2.39 1.19 4.53 3.08 6L5 21l4.11-1.64C9.99 19.45 10.98 19.6 12 19.6c4.97 0 9-3.58 9-8s-4.03-8.6-9-8.6Z" stroke="white" stroke-width="1.7" stroke-linejoin="round"/></svg>
+  </div>
+  <div>
+    <div class="brand">ChatBot Config</div>
+    <div class="brand-sub">Handbook</div>
+  </div>
+</header>
+
+<section class="hero">
+  <div>
+    <span class="eyebrow">Getting started guide</span>
+    <h1>Launch a chatbot your customers actually get answers from.</h1>
+    <p>From your first login to your first captured lead — everything you need to set up, train, and run your AI chatbot.</p>
+  </div>
+  <div class="hero-meta">
+    Reading time: <strong>~8 min</strong><br>
+    Covers: setup, training,<br>embedding, team &amp; billing
+  </div>
+</section>
+
+<div class="tracker-wrap">
+  <div class="tracker">
+    <div class="tracker-step"><span class="tracker-num">01</span><span class="tracker-label">Sign up</span></div>
+    <div class="tracker-step"><span class="tracker-num">02</span><span class="tracker-label">Create org</span></div>
+    <div class="tracker-step"><span class="tracker-num">03</span><span class="tracker-label">New chatbot</span></div>
+    <div class="tracker-step"><span class="tracker-num">04</span><span class="tracker-label">Train it</span></div>
+    <div class="tracker-step"><span class="tracker-num">05</span><span class="tracker-label">Embed it</span></div>
+  </div>
+</div>
+
+<div class="shell">
+  <div class="mobile-toc">
+    <a href="#account">Account</a>
+    <a href="#org">Organization</a>
+    <a href="#create">Create bot</a>
+    <a href="#train">Train</a>
+    <a href="#persona">Persona</a>
+    <a href="#test">Test</a>
+    <a href="#embed">Embed</a>
+    <a href="#conversations">Conversations</a>
+    <a href="#team">Team</a>
+    <a href="#billing">Billing</a>
+  </div>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Table of contents">
+      <div class="toc-group">
+        <span class="toc-group-label">Getting started</span>
+        <a href="#account" data-toc>1. Create your account</a>
+        <a href="#org" data-toc>2. Set up your organization</a>
+        <a href="#create" data-toc>3. Create your first chatbot</a>
+        <a href="#train" data-toc>4. Train it on your content</a>
+        <a href="#persona" data-toc>5. Give it a personality</a>
+        <a href="#test" data-toc>6. Test before you go live</a>
+        <a href="#embed" data-toc>7. Add it to your website</a>
+      </div>
+      <div class="toc-group">
+        <span class="toc-group-label">Running it day to day</span>
+        <a href="#conversations" data-toc>Conversations &amp; leads</a>
+        <a href="#handoff" data-toc>Live agent handoff</a>
+        <a href="#webhooks" data-toc>Connect your tools</a>
+        <a href="#whitelabel" data-toc>White-label the widget</a>
+        <a href="#team" data-toc>Invite your team</a>
+        <a href="#billing" data-toc>Plans &amp; billing</a>
+      </div>
+    </nav>
+
+    <main>
+      <!-- ============ GETTING STARTED ============ -->
+      <div class="step-section">
+        <div class="section-head">
+          <h2>Getting started</h2>
+          <p>Seven steps, start to finish. Most people are embedded on their site within ten minutes.</p>
+        </div>
+
+        <div class="step" id="account">
+          <div class="step-num">1</div>
+          <div>
+            <h3>Create your account</h3>
+            <p>Head to your dashboard and sign up with your work email. Already have an account? Just log in — you'll land on <strong>My bots</strong>.</p>
+          </div>
+        </div>
+
+        <div class="step" id="org">
+          <div class="step-num">2</div>
+          <div>
+            <h3>Set up your organization</h3>
+            <p>Chatbots belong to an organization, not to you personally — that's what lets your team share access to them later. On first login you'll be asked to name yours.</p>
+            <div class="echo"><span class="echo-label">You'll see</span>"Chatbots belong to an organization, so your team can share access to them." — type a name and click <strong>Create organization</strong>.</div>
+          </div>
+        </div>
+
+        <div class="step" id="create">
+          <div class="step-num">3</div>
+          <div>
+            <h3>Create your first chatbot</h3>
+            <p>From <strong>My bots</strong>, click <strong>New chatbot</strong>. Give it a name, and — this is the part worth not skipping — a website URL.</p>
+            <div class="echo"><span class="echo-label">You'll see</span>"Point one at your website and it will be trained and ready to embed" — hand it a URL here and ChatBot Config starts crawling and training immediately, no extra step needed.</div>
+            <p style="margin-top:12px">You'll also pick a brand colour and a widget icon:</p>
+            <div class="icon-grid">
+              <span class="icon-pill"><span>🤖</span>Robot</span>
+              <span class="icon-pill"><span>💬</span>Message bubble</span>
+              <span class="icon-pill"><span>✨</span>Sparkles</span>
+              <span class="icon-pill"><span>🛟</span>Life saver</span>
+              <span class="icon-pill"><span>💭</span>Double chat</span>
+              <span class="icon-pill"><span>🪄</span>Magic wand</span>
+              <span class="icon-pill"><span>🙂</span>Smiley face</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step" id="train">
+          <div class="step-num">4</div>
+          <div>
+            <h3>Train it on your content</h3>
+            <p>Open your chatbot and go to <strong>Training → Knowledge base</strong>. You've got two ways in:</p>
+            <ul>
+              <li><strong>Train from website</strong> — give it a URL and it crawls and indexes the pages itself.</li>
+              <li><strong>Upload a PDF, text file or image</strong> — for a spec sheet, FAQ doc, or even a photo of a printed price list (it reads text out of images too).</li>
+            </ul>
+            <p style="margin-top:10px">Content changes often? Re-run either one any time — it just adds to what the bot already knows.</p>
+          </div>
+        </div>
+
+        <div class="step" id="persona">
+          <div class="step-num">5</div>
+          <div>
+            <h3>Give it a personality</h3>
+            <p>In the <strong>Persona</strong> card, either start from a preset or write your own instructions from scratch — this is what shapes tone, not facts, so it works alongside whatever you trained it on.</p>
+            <div class="chip-row">
+              <span class="chip accent">Friendly</span>
+              <span class="chip accent">Technical</span>
+              <span class="chip accent">Sales</span>
+              <span class="chip accent">Pirate</span>
+            </div>
+            <p style="margin-top:10px;font-size:13.5px;color:var(--ink-muted)">Yes, Pirate is real. Click a preset to load it into the box, tweak the wording, then <strong>Save persona</strong>.</p>
+          </div>
+        </div>
+
+        <div class="step" id="test">
+          <div class="step-num">6</div>
+          <div>
+            <h3>Test before you go live</h3>
+            <p>Switch to the <strong>Test chatbot</strong> tab and ask it the questions a real customer would. Answers grounded in your trained content show a <strong>Source</strong> link back to the page they came from — a good sign it's actually reading what you gave it, not guessing.</p>
+            <p style="margin-top:10px">Want a second opinion before it's on your site? Copy the shareable demo link from the Embed card and send it to a teammate — no code required to try it.</p>
+          </div>
+        </div>
+
+        <div class="step" id="embed">
+          <div class="step-num">7</div>
+          <div>
+            <h3>Add it to your website</h3>
+            <p>Copy the snippet from the <strong>Embed on your website</strong> card and paste it just before the closing <code>&lt;/body&gt;</code> tag on every page you want the widget to appear on.</p>
+            <div class="code-card">
+              <div class="code-head">
+                <span>embed.html</span>
+                <button class="copy-btn" id="copyBtn" type="button">Copy</button>
+              </div>
+              <pre class="code-body"><code id="snippet">&lt;<span class="code-tag">script</span> <span class="code-attr">src</span>=<span class="code-str">"https://www.chatbotconfig.uk/widget-v2.js"</span> <span class="code-attr">data-bot-id</span>=<span class="code-str">"YOUR_BOT_ID"</span>&gt;&lt;/<span class="code-tag">script</span>&gt;</code></pre>
+            </div>
+            <div class="note">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a1 1 0 0 0 .86 1.5h18.64a1 1 0 0 0 .86-1.5L13.71 3.86a1 1 0 0 0-1.72 0Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+              <p>Your real snippet (with your actual bot ID already filled in) is sitting right there in the Embed card — copy that one, not this example.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ REFERENCE ============ -->
+      <div class="step-section" style="margin-top:64px">
+        <div class="section-head">
+          <h2>Running it day to day</h2>
+          <p>Once it's live, this is what you'll come back to.</p>
+        </div>
+
+        <div class="ref-grid">
+          <div class="ref-card" id="conversations">
+            <div class="ref-card-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v12H7l-3 3V4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+            <h3>Conversations &amp; leads</h3>
+            <p>The <strong>Conversations</strong> tab logs every chat session; <strong>Leads</strong> holds every email your bot has captured. Both load in pages, so a busy bot doesn't choke your browser — click <strong>Load more</strong> as you scroll, or export the full set as CSV.</p>
+          </div>
+
+          <div class="ref-card" id="handoff">
+            <div class="ref-card-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M4.9 19h14.2a1.8 1.8 0 0 0 1.56-2.7l-7.1-12.3a1.8 1.8 0 0 0-3.12 0l-7.1 12.3A1.8 1.8 0 0 0 4.9 19Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+            <h3>Live agent handoff</h3>
+            <p>When the AI genuinely can't help, it can hand off instead of guessing.</p>
+            <div class="echo"><span class="echo-label">You'll see</span>"Live agent handoff triggered — the AI has paused and an email has been sent to your team."</div>
+          </div>
+
+          <div class="ref-card" id="webhooks">
+            <div class="ref-card-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M8 12a4 4 0 1 1 8 0 4 4 0 0 1-8 0Zm4-9v3m0 12v3m9-9h-3M4 12H1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+            <h3>Connect your tools</h3>
+            <p>Drop a webhook URL into <strong>Integrations</strong> and every captured lead gets POSTed straight to it — wire it into Zapier, Make, or HubSpot and it flows into whatever you already use.</p>
+          </div>
+
+          <div class="ref-card" id="whitelabel">
+            <div class="ref-card-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Zm9-9v18" stroke="currentColor" stroke-width="1.6"/></svg></div>
+            <h3>White-label the widget</h3>
+            <p>Flip <strong>Remove branding</strong> in Integrations and the "Powered by ChatBot Config" watermark disappears from your widget — it's just your chatbot, on your site.</p>
+          </div>
+
+          <div class="ref-card" id="team">
+            <div class="ref-card-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 19c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6M16 8.2a3 3 0 0 1 0 5.9M21.5 19c0-2.7-2.2-4.9-5-5.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+            <h3>Invite your team</h3>
+            <p>From <strong>Team</strong>, drop in a teammate's email, pick a role, and send the invite — they get an email with a link to accept.</p>
+            <div class="role-table">
+              <div class="role-row"><div class="rname">Owner</div><div class="rdesc">Full control, including billing and removing other owners.</div></div>
+              <div class="role-row"><div class="rname">Admin</div><div class="rdesc">Manage bots and teammates, minus billing.</div></div>
+              <div class="role-row"><div class="rname">Editor</div><div class="rdesc">Create, train, and configure chatbots.</div></div>
+              <div class="role-row"><div class="rname">Viewer</div><div class="rdesc">Read-only — conversations, leads, and settings.</div></div>
+            </div>
+          </div>
+
+          <div class="ref-card" id="billing">
+            <div class="ref-card-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.6"/></svg></div>
+            <h3>Plans &amp; billing</h3>
+            <p>Manage your subscription from <strong>Settings</strong> — upgrade, downgrade, or update payment details through the billing portal any time.</p>
+            <div class="plan-strip">
+              <div class="plan-pill"><div class="pname">Starter</div><div class="pprice">£49</div><div class="pfeat">1 chatbot</div></div>
+              <div class="plan-pill"><div class="pname">Pro</div><div class="pprice">£99</div><div class="pfeat">3 chatbots, white-label</div></div>
+              <div class="plan-pill"><div class="pname">Enterprise</div><div class="pprice">£299</div><div class="pfeat">10 chatbots, webhooks</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-band">
+        <div>
+          <h3>Stuck on something this didn't cover?</h3>
+          <p>Help &amp; support is one click away in the sidebar of your dashboard.</p>
+        </div>
+        <a class="help-cta" href="#account">Back to the top ↑</a>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var copyBtn = document.getElementById('copyBtn');
+    copyBtn.addEventListener('click', function () {
+      var text = '<script src="https://www.chatbotconfig.uk/widget-v2.js" data-bot-id="YOUR_BOT_ID"><\/script>';
+      var done = function () {
+        var original = copyBtn.textContent;
+        copyBtn.textContent = 'Copied';
+        setTimeout(function () { copyBtn.textContent = original; }, 1600);
+      };
+      try {
+        navigator.clipboard.writeText(text).then(done).catch(function () {});
+      } catch (e) {}
+    });
+
+    var links = Array.prototype.slice.call(document.querySelectorAll('a[data-toc]'));
+    var sections = links.map(function (a) {
+      return document.querySelector(a.getAttribute('href'));
+    });
+
+    function onScroll() {
+      var pos = window.scrollY + 120;
+      var activeIndex = 0;
+      for (var i = 0; i < sections.length; i++) {
+        if (sections[i] && sections[i].offsetTop <= pos) activeIndex = i;
+      }
+      links.forEach(function (a, i) {
+        a.classList.toggle('active', i === activeIndex);
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+
+</body>
+</html>

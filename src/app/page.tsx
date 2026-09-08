@@ -199,6 +199,14 @@ function SiteNav() {
               {label}
             </a>
           ))}
+          <a
+            href="/handbook.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-ink-muted transition-colors hover:text-ink-strong"
+          >
+            Guide
+          </a>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -722,6 +730,7 @@ function SiteFooter() {
                 ["Features", "#features"],
                 ["Pricing", "#pricing"],
                 ["FAQ", "#faq"],
+                ["Guide", "/handbook.html"],
               ]}
             />
             <FooterCol

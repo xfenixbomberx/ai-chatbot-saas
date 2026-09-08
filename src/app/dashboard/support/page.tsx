@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Mail, MessageCircle, Send, Loader2, CheckCircle2, BookOpen, ArrowUpRight } from "lucide-react";
 
-const HANDBOOK_URL = "https://claude.ai/code/artifact/afadebf2-9f2c-4352-a565-41f9108027fb";
+const HANDBOOK_URL = "/handbook.html";
 
 const HELP = [
   {
