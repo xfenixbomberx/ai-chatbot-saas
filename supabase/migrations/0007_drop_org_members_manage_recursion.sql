@@ -1,0 +1,14 @@
+-- The previous migration (0006) fixed the dedicated SELECT policy on
+-- organization_members, but the read was still recursing -- turns out
+-- "owners_admins_manage_members" (a FOR ALL policy) applies to SELECT
+-- too, since Postgres combines multiple permissive policies for the same
+-- command with OR. That policy has the same self-referencing subquery
+-- pattern (queries organization_members from within its own policy),
+-- so every read was still hitting infinite recursion regardless of 0006.
+--
+-- All actual writes to this table (api/org, api/org/[id]/members) go
+-- through the service-role client, which bypasses RLS entirely -- this
+-- policy was never enforcing anything for real writes, only breaking
+-- reads. Dropping it outright rather than trying to rewrite it
+-- non-recursively, since it's unused.
+drop policy "owners_admins_manage_members" on organization_members;
