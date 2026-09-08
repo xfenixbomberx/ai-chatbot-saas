@@ -143,6 +143,8 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.error) alert(data.error);
       else await refetchOrgs();
+    } catch {
+      alert("Failed to create organization -- the server returned an unexpected response.");
     } finally {
       setIsCreatingOrg(false);
     }

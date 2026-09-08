@@ -32,6 +32,8 @@ export default function OrgSwitcher() {
       } else {
         alert(data.error || "Failed to create organization.");
       }
+    } catch {
+      alert("Failed to create organization -- the server returned an unexpected response.");
     } finally {
       setIsCreating(false);
     }
