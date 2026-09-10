@@ -205,6 +205,9 @@
 
   let isOpen = false;
   let hasAskedForEmail = false;
+  // Set when a handoff happens before the visitor has left an email: the
+  // input stays open for that one reply so the team can reach them.
+  let awaitingHandoffEmail = false;
   let hasProvidedEmail = false;
 
   // Session ID generation
@@ -254,6 +257,19 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = input.value.trim();
+
+    function showHandoffBanner() {
+      const handoffDiv = document.createElement('div');
+      handoffDiv.style.padding = '12px';
+      handoffDiv.style.background = '#fffbeb';
+      handoffDiv.style.color = '#b45309';
+      handoffDiv.style.fontSize = '12px';
+      handoffDiv.style.textAlign = 'center';
+      handoffDiv.style.borderTop = '1px solid #fde68a';
+      handoffDiv.innerHTML = '<strong>Live Agent Handoff Triggered</strong><br>The AI has paused. Our team has been alerted.';
+      form.style.display = 'none';
+      document.getElementById('chatbot-widget-window').appendChild(handoffDiv);
+    }
     if (!text) return;
 
     addMessage(text, 'user');
@@ -262,14 +278,23 @@
     // Handle Lead Capture (Email)
     if (hasAskedForEmail && !hasProvidedEmail && text.includes('@')) {
       hasProvidedEmail = true;
-      addMessage("Thanks, I've saved your email! Feel free to keep asking questions.", 'bot');
+      addMessage(awaitingHandoffEmail
+        ? "Thanks! Our team will use this to get back to you."
+        : "Thanks, I've saved your email! Feel free to keep asking questions.", 'bot');
       try {
         await fetch(`${BASE_URL}/api/lead`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ botId: botId, email: text })
+          body: JSON.stringify({ botId: botId, email: text, sessionId: sessionId })
         });
       } catch(e) {}
+      if (awaitingHandoffEmail) showHandoffBanner();
+      return;
+    } else if (awaitingHandoffEmail) {
+      // Not an email, but the AI is paused either way.
+      hasProvidedEmail = true;
+      addMessage('No problem. Our team has been alerted.', 'bot');
+      showHandoffBanner();
       return;
     } else if (hasAskedForEmail && !hasProvidedEmail) {
       addMessage('That doesn\'t look like a valid email, but I will continue answering your questions!', 'bot');
@@ -294,17 +319,16 @@
       addMessage(data.answer || data.error, 'bot', data.citation);
 
       if (data.isHandoff) {
-         const handoffDiv = document.createElement('div');
-         handoffDiv.style.padding = '12px';
-         handoffDiv.style.background = '#fffbeb';
-         handoffDiv.style.color = '#b45309';
-         handoffDiv.style.fontSize = '12px';
-         handoffDiv.style.textAlign = 'center';
-         handoffDiv.style.borderTop = '1px solid #fde68a';
-         handoffDiv.innerHTML = '<strong>Live Agent Handoff Triggered</strong><br>The AI has paused. Our team has been alerted.';
-         form.style.display = 'none';
-         document.getElementById('chatbot-widget-window').appendChild(handoffDiv);
-         return; // Stop asking for email
+        if (!hasProvidedEmail) {
+          // The team can't reply without a way to reach the visitor, so ask
+          // before pausing.
+          awaitingHandoffEmail = true;
+          hasAskedForEmail = true;
+          addMessage('So our team can get back to you, what is your email address?', 'bot');
+        } else {
+          showHandoffBanner();
+        }
+        return;
       }
 
       // Lead capture trigger after first question

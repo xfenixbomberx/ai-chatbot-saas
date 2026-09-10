@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { requireUser, requireOrgAccess, AuthError, errorMessage } from "@/lib/auth";
+import { sender, escapeHtml } from "@/lib/email";
 
 // Lists members (with email, resolved via the admin API since auth.users
 // isn't queryable from the regular client) and pending invites. Any member
@@ -82,10 +83,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "ChatBot Config <onboarding@resend.dev>",
+        from: sender("ChatBot Config"),
         to: invite.email,
         subject: `You've been invited to join ${org?.name || "a team"} on ChatBot Config`,
-        html: `<p>You've been invited to join <strong>${org?.name || "a team"}</strong> on ChatBot Config as ${
+        html: `<p>You've been invited to join <strong>${escapeHtml(org?.name || "a team")}</strong> on ChatBot Config as ${
           role === "admin" ? "an" : "a"
         } ${role}.</p><p><a href="${acceptUrl}">Accept invite</a></p><p>This link expires in 7 days.</p>`,
       }),

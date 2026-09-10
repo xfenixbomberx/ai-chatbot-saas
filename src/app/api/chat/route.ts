@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { corsHeaders, corsOptionsResponse } from "@/lib/cors";
+import { botTeam, escapeHtml, findEmail, sendEmail, sender } from "@/lib/email";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -19,14 +20,15 @@ export async function POST(req: Request) {
 
     const { botId, message, sessionId } = await req.json();
 
-    // Log the user message asynchronously
-    if (sessionId) {
-      supabase.from("chat_messages").insert([
-        { session_id: sessionId, bot_id: botId, role: "user", content: message }
-      ]).then(({ error }) => {
-        if (error) console.error("❌ Failed to log user message:", error.message, error.details);
-      });
-    }
+    // Log the user message asynchronously. Kept as a promise so a handoff
+    // email can wait for it before reading the transcript back.
+    const userMessageLogged = sessionId
+      ? supabase.from("chat_messages").insert([
+          { session_id: sessionId, bot_id: botId, role: "user", content: message }
+        ]).then(({ error }) => {
+          if (error) console.error("❌ Failed to log user message:", error.message, error.details);
+        })
+      : Promise.resolve();
 
     // 1. Convert user's message to a vector
     const embeddingResponse = await ai.models.embedContent({
@@ -116,27 +118,16 @@ export async function POST(req: Request) {
         isHandoff = true;
         botAnswer = "I don't have enough information to answer that based on the website. I have alerted our human team and they will be in touch shortly!";
         
-        // Trigger Resend Email Alert in the background
-        fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            from: "AI Support <onboarding@resend.dev>",
-            to: "jordanpotter41@gmail.com",
-            subject: "Human Handoff Alert - ChatBot Config",
-            html: `<p>Your AI assistant couldn't answer the following question:</p><blockquote>${message}</blockquote><p>Session ID: ${sessionId}</p>`
-          })
-        }).catch(console.error);
+        // Email the bot's team once the response is sent, so the visitor
+        // isn't kept waiting on the lookups and the send.
+        after(() => sendHandoffEmail(supabase, { botId, sessionId, question: message, userMessageLogged }));
       }
     }
 
     // Log the bot message asynchronously
     if (sessionId) {
       supabase.from("chat_messages").insert([
-        { session_id: sessionId, bot_id: botId, role: "bot", content: botAnswer }
+        { session_id: sessionId, bot_id: botId, role: "bot", content: botAnswer, is_handoff: isHandoff }
       ]).then(({ error }) => {
         if (error) console.error("❌ Failed to log bot message:", error.message, error.details);
       });
@@ -150,5 +141,78 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Chat error:", error);
     return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
+  }
+}
+
+// Emails the owners and admins of the bot's organization when the bot
+// escalates, with the conversation so far so someone can pick it up. If the
+// visitor has already left an email it becomes the reply-to; if they leave
+// one afterwards, /api/lead sends a follow-up.
+async function sendHandoffEmail(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  { botId, sessionId, question, userMessageLogged }: {
+    botId: string;
+    sessionId?: string;
+    question: string;
+    userMessageLogged: PromiseLike<unknown>;
+  }
+) {
+  try {
+    const { botName, recipients } = await botTeam(supabase, botId);
+    if (recipients.length === 0) {
+      console.error(`Handoff for bot ${botId}: no owner or admin email to notify.`);
+      return;
+    }
+
+    // The latest 50 messages, oldest first. The current question's insert
+    // started at the top of the request -- wait for it so it's included.
+    await userMessageLogged;
+    let transcript: { role: string; content: string }[] = [];
+    let visitorEmail: string | null = null;
+    if (sessionId) {
+      const [{ data: history }, { data: lead }] = await Promise.all([
+        supabase
+          .from("chat_messages")
+          .select("role, content")
+          .eq("bot_id", botId)
+          .eq("session_id", sessionId)
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("leads")
+          .select("email")
+          .eq("bot_id", botId)
+          .eq("session_id", sessionId)
+          .order("captured_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+      transcript = (history || []).reverse();
+      visitorEmail = lead ? findEmail(lead.email) : null;
+    }
+    if (!transcript.some((m) => m.role === "user" && m.content === question)) {
+      transcript.push({ role: "user", content: question });
+    }
+
+    const conversation = transcript
+      .map((m) => `<p><strong>${m.role === "user" ? "Visitor" : "Bot"}:</strong> ${escapeHtml(m.content).replace(/\n/g, "<br>")}</p>`)
+      .join("");
+    const contact = visitorEmail
+      ? `<p><strong>Visitor's email:</strong> ${escapeHtml(visitorEmail)}. Reply to this email to reach them directly.</p>`
+      : `<p>They haven't left an email yet. If they do, we'll send it to you straight away.</p>`;
+
+    await sendEmail({
+      from: sender("ChatBot Config"),
+      to: recipients,
+      subject: `Human handoff: ${botName} needs a person`,
+      html: `<p>Your <strong>${escapeHtml(botName)}</strong> assistant couldn't answer a visitor and told them your team will be in touch.</p>
+<p><strong>Their question:</strong> ${escapeHtml(question)}</p>
+${contact}
+<h3>Conversation</h3>${conversation}
+<p style="color:#888">Session ID: ${escapeHtml(sessionId || "none")}</p>`,
+      reply_to: visitorEmail ?? undefined,
+    });
+  } catch (err) {
+    console.error("Handoff email failed:", err);
   }
 }
