@@ -71,6 +71,11 @@ export default function DashboardPage() {
   const [botIcon, setBotIcon] = useState("bot");
   const [isLoading, setIsLoading] = useState(false);
   const [isTrainingAll, setIsTrainingAll] = useState(false);
+  // The bot awaiting delete confirmation -- an in-app modal rather than
+  // window.confirm, which renders as a raw browser dialog outside the app.
+  const [botToDelete, setBotToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const [bots, setBots] = useState<any[]>([]);
   const [isFetching, setIsFetching] = useState(true);
@@ -253,14 +258,36 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteBot = async (e: React.MouseEvent, botId: string) => {
+  const handleDeleteBot = (e: React.MouseEvent, bot: { id: string; name: string }) => {
+    // The button sits inside the card's Link, so stop the navigation.
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm("Delete this chatbot? This cannot be undone.")) return;
+    setDeleteError(null);
+    setBotToDelete({ id: bot.id, name: bot.name });
+  };
 
-    const { error } = await supabase.from("chatbots").delete().eq("id", botId);
-    if (error) alert("Error deleting chatbot: " + error.message);
-    else if (currentOrg) fetchBots(currentOrg.id);
+  const closeDeleteModal = () => {
+    setBotToDelete(null);
+    setDeleteError(null);
+  };
+
+  const confirmDeleteBot = async () => {
+    if (!botToDelete) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+    const { error } = await supabase.from("chatbots").delete().eq("id", botToDelete.id);
+    setIsDeleting(false);
+
+    // Keep the modal open on failure so the reason is visible next to the
+    // button that caused it.
+    if (error) {
+      setDeleteError(error.message);
+      return;
+    }
+
+    setBotToDelete(null);
+    if (currentOrg) fetchBots(currentOrg.id);
   };
 
   /* ------------------------------ Loading ----------------------------- */
@@ -466,7 +493,7 @@ export default function DashboardPage() {
                   className="group relative rounded-2xl border border-line bg-white p-5 shadow-[var(--shadow-xs)] transition-all hover:-translate-y-0.5 hover:border-line-strong hover:shadow-[var(--shadow-md)]"
                 >
                   <button
-                    onClick={(e) => handleDeleteBot(e, bot.id)}
+                    onClick={(e) => handleDeleteBot(e, bot)}
                     className="absolute right-3 top-3 rounded-lg p-1.5 text-ink-faint opacity-0 transition-all hover:bg-danger-soft hover:text-danger group-hover:opacity-100"
                     title="Delete chatbot"
                   >
@@ -607,6 +634,65 @@ export default function DashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* --------------------------- Delete chatbot ------------------------- */}
+      {botToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-ink-strong/35 backdrop-blur-sm"
+            onClick={() => {
+              if (!isDeleting) closeDeleteModal();
+            }}
+          />
+          <div className="ds-rise relative w-full max-w-md overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-xl)]">
+            <div className="flex items-center justify-between border-b border-line px-6 py-4">
+              <div>
+                <h2 className="text-[17px] font-semibold text-ink-strong">Delete chatbot</h2>
+                <p className="mt-0.5 text-[13px] text-ink-muted">This can&apos;t be undone.</p>
+              </div>
+              <button
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
+                className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink-strong disabled:opacity-60"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5">
+              <p className="text-[15px] leading-relaxed text-ink-muted">
+                <strong className="font-semibold text-ink-strong">{botToDelete.name}</strong> will be deleted,
+                along with what it learned from its training. The widget stops answering on any site it&apos;s
+                embedded in.
+              </p>
+              {deleteError && (
+                <p className="mt-4 rounded-lg bg-danger-soft px-3 py-2 text-[13px] text-danger">
+                  {deleteError}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3 border-t border-line bg-surface-muted px-6 py-4">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
+                className="flex-1 rounded-lg border border-line-strong bg-white px-4 py-2.5 text-sm font-semibold text-ink-strong transition-colors hover:bg-surface-muted disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteBot}
+                disabled={isDeleting}
+                className="flex flex-1 items-center justify-center rounded-lg bg-danger px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+              >
+                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete chatbot"}
+              </button>
+            </div>
           </div>
         </div>
       )}
