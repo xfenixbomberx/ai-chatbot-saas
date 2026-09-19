@@ -38,25 +38,67 @@ export async function POST(req: Request) {
     let urlsToScrape = [websiteUrl];
     let allText = "";
 
-    const fetchOptions = {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-GB,en;q=0.9",
-      }
+    const BROWSER_HEADERS: Record<string, string> = {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "en-GB,en;q=0.9",
+      "Upgrade-Insecure-Requests": "1",
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "none",
+      "Sec-Fetch-User": "?1",
     };
 
+    // Some filters reject one browser string but allow another, so a blocked
+    // page is retried once as Chrome on Windows. This does NOT get past
+    // Cloudflare-style bot management, which scores the server's IP and TLS
+    // fingerprint rather than the user agent -- those sites need a PDF upload.
+    const RETRY_USER_AGENT =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
+    // 8s rather than 4s: the whole route gets 60s, and a slow first byte was
+    // costing pages that would have loaded fine.
+    const PAGE_TIMEOUT_MS = 8000;
+
+    // Statuses that mean "refused", kept so a blocked crawl can say so
+    // instead of claiming the site has no readable text.
+    const blockedStatuses: number[] = [];
+
+    async function fetchAsBrowser(url: string) {
+      for (const userAgent of [BROWSER_HEADERS["User-Agent"], RETRY_USER_AGENT]) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), PAGE_TIMEOUT_MS);
+        try {
+          const response = await fetch(url, {
+            headers: { ...BROWSER_HEADERS, "User-Agent": userAgent },
+            signal: controller.signal,
+          });
+          if (response.ok) {
+            return { html: await response.text(), finalUrl: response.url };
+          }
+          if ([401, 403, 405, 429].includes(response.status)) {
+            blockedStatuses.push(response.status);
+            continue;
+          }
+          return null;
+        } catch {
+          // Timeout, DNS failure or connection reset -- treat as unreachable.
+          return null;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+      return null;
+    }
+
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout for the initial root page
-      const response = await fetch(websiteUrl, { ...fetchOptions, signal: controller.signal });
-      clearTimeout(timeoutId);
-      
+      const initial = await fetchAsBrowser(websiteUrl);
+      if (!initial) throw new Error("Could not fetch the root page.");
+
       // Handle redirects (e.g., example.com -> www.example.com)
-      const finalUrl = response.url;
-      const baseUrl = getBaseUrl(finalUrl);
-      
-      const html = await response.text();
+      const baseUrl = getBaseUrl(initial.finalUrl);
+
+      const html = initial.html;
       const $ = cheerio.load(html);
       
       // Find internal links and prioritize valuable pages
@@ -109,13 +151,10 @@ export async function POST(req: Request) {
     // Fetch and parse all pages in parallel with a timeout to prevent hanging
     const pageContents = await Promise.all(urlsToScrape.map(async (url) => {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout per page
-        
-        const response = await fetch(url, { ...fetchOptions, signal: controller.signal });
-        clearTimeout(timeoutId);
-        
-        const html = await response.text();
+        const page = await fetchAsBrowser(url);
+        if (!page) return "";
+
+        const html = page.html;
         const $ = cheerio.load(html);
         $("script, style, noscript, nav, footer, header, iframe").remove();
         const text = $("body").text().replace(/\s+/g, " ").trim();
@@ -131,6 +170,14 @@ export async function POST(req: Request) {
     allText += pageContents.join("");
 
     if (!allText || allText.length < 50) {
+      if (blockedStatuses.length > 0) {
+        return NextResponse.json(
+          {
+            error: `This website blocked our crawler (HTTP ${blockedStatuses[0]}). Some sites refuse automated readers -- upload a PDF or text file of the content instead.`,
+          },
+          { status: 400 }
+        );
+      }
       return NextResponse.json({ error: "Not enough readable text found on the website." }, { status: 400 });
     }
 
