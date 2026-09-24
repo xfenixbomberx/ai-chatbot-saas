@@ -10,6 +10,7 @@ import {
   Link2,
   Code,
   Mail,
+  Eye,
   MessageSquare,
   Download,
   Settings,
@@ -112,6 +113,8 @@ export default function BotManagementPage() {
   const [isLoadingMoreLeads, setIsLoadingMoreLeads] = useState(false);
   const [chatSessions, setChatSessions] = useState<Record<string, any[]>>({});
   const [messagesHasMore, setMessagesHasMore] = useState(false);
+  // Demo link opens, which happen without any message being sent.
+  const [demoViews, setDemoViews] = useState(0);
   const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState(false);
   const [chartData, setChartData] = useState<any[]>([]);
   const [isExporting, setIsExporting] = useState(false);
@@ -171,6 +174,12 @@ export default function BotManagementPage() {
         setLeadsTotalCount(leadsCount ?? leadsData.length);
         setLeadsHasMore((leadsCount ?? 0) > leadsData.length);
       }
+
+      const { count: viewsCount } = await supabase
+        .from("demo_views")
+        .select("*", { count: "exact", head: true })
+        .eq("bot_id", botId);
+      setDemoViews(viewsCount ?? 0);
 
       // Most recent page, newest first, then reversed so sessions render
       // chronologically -- same effect as the old ascending-order fetch for
@@ -877,7 +886,12 @@ export default function BotManagementPage() {
           {/* --------------------------- INBOX -------------------------- */}
           {activeTab === "inbox" && (
             <div className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Stat
+                  label="Demo link opened"
+                  value={demoViews}
+                  icon={<Eye className="h-[18px] w-[18px]" />}
+                />
                 <Stat
                   label="Conversations"
                   value={sessionCount}

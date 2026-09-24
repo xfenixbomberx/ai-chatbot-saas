@@ -16,6 +16,8 @@ export default function DemoPage() {
   const [hasAskedForEmail, setHasAskedForEmail] = useState(false);
   const [hasProvidedEmail, setHasProvidedEmail] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // React runs effects twice in development; this keeps the view count honest.
+  const viewLogged = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -23,7 +25,24 @@ export default function DemoPage() {
 
   useEffect(() => {
     // Generate a unique session ID for this demo visitor so it shows up in Analytics
-    setSessionId(`demo-${Math.random().toString(36).substring(2, 9)}`);
+    const visitorSessionId = `demo-${Math.random().toString(36).substring(2, 9)}`;
+    setSessionId(visitorSessionId);
+
+    // Record that the link was opened. A prospect who reads the greeting and
+    // leaves never creates a conversation, so without this they look
+    // identical to someone who never clicked.
+    if (!viewLogged.current) {
+      viewLogged.current = true;
+      fetch("/api/demo-view", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          botId,
+          sessionId: visitorSessionId,
+          referrer: typeof document !== "undefined" ? document.referrer : null,
+        }),
+      }).catch(() => {});
+    }
     
     // Fetch bot config for brand colors
     fetch(`/api/bot/${botId}`)
